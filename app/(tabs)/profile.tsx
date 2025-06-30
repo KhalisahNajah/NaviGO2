@@ -160,7 +160,7 @@ export default function ProfileScreen() {
     
     if (years >= 5) {
       return {
-        description: '🏎️ You\'ve unlocked the Highway Hero avatar! This sleek blue sports car represents your mastery of navigation.',
+        description: '🏎️ You\'ve unlocked the Highway Hero avatar! This sleek green sports car represents your mastery of navigation.',
         nextLevel: 'You\'ve reached the highest level! Keep navigating to maintain your legendary status.'
       };
     } else if (years >= 1) {
@@ -170,12 +170,12 @@ export default function ProfileScreen() {
       };
     } else if (months >= 5) {
       return {
-        description: '🚗 You\'ve unlocked the Tiny Tires avatar! This orange car represents your developing navigation skills.',
+        description: '🚗 You\'ve unlocked the Tiny Tires avatar! This yellow car represents your developing navigation skills.',
         nextLevel: `Navigate for ${12 - months} more month${12 - months > 1 ? 's' : ''} to unlock the Mini Racer avatar!`
       };
     } else {
       return {
-        description: '🚙 Welcome! You have the New Driver avatar - a friendly yellow car perfect for beginners.',
+        description: '🚙 Welcome! You have the New Driver avatar - a friendly blue car perfect for beginners.',
         nextLevel: `Use naviGO for ${5 - months} more month${5 - months > 1 ? 's' : ''} to unlock the Tiny Tires avatar!`
       };
     }

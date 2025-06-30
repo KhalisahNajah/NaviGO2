@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
     "build:web": "expo export --platform web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "deploy": "npm run build:web && netlify deploy --prod --dir=dist"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",
@@ -50,5 +51,16 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~19.0.10",
     "typescript": "~5.8.3"
-  }
+  },
+  "keywords": [
+    "navigation",
+    "maps",
+    "react-native",
+    "expo",
+    "traffic",
+    "fuel",
+    "mobile-app"
+  ],
+  "author": "Your Name",
+  "description": "Smart navigation app with fuel cost calculation and traffic reporting"
 }

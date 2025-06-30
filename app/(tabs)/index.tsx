@@ -167,11 +167,6 @@ export default function Navigate() {
               style={styles.logo}
               resizeMode="contain"
             />
-          </View>
-          <TouchableOpacity style={styles.settingsButton}>
-            <Settings size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
       </View>
 
       {/* Search Overlay */}

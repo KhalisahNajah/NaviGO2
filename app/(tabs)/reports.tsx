@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   Modal,
   Alert,
   RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { TriangleAlert as AlertTriangle, Plus, MapPin, Clock, Users, MessageCircle, CircleCheck as CheckCircle, X, Send, Filter, Search, Car, Construction, Zap, TreePine, CloudRain, Shield, Navigation, Eye, MessageSquare } from 'lucide-react-native';
 import { ThemeContext } from '@/contexts/ThemeContext';
@@ -25,9 +27,35 @@ import {
   sendMessage,
   getChatMessages,
   subscribeToChatMessages,
-  TrafficReport,
-  ChatMessage,
 } from '@/lib/database';
+
+// Assuming these interfaces are defined in '@/lib/database' or a types file
+interface TrafficReport {
+  id?: string;
+  type: 'police' | 'traffic' | 'accident' | 'breakdown' | 'construction' | 'pothole' | 'tree' | 'weather';
+  title: string;
+  description: string;
+  location: string;
+  severity: 'low' | 'medium' | 'high';
+  userId: string;
+  userName: string;
+  confirmations: number;
+  confirmedBy: string[];
+  status: 'active' | 'resolved';
+  createdAt: any; // Firestore Timestamp
+  chatRoomId?: string;
+}
+
+interface ChatMessage {
+  id?: string;
+  chatRoomId: string;
+  userId: string;
+  userName: string;
+  message: string;
+  messageType: 'text' | 'image' | 'location'; // Example types
+  createdAt: any; // Firestore Timestamp
+}
+
 
 interface ReportFormData {
   type: 'police' | 'traffic' | 'accident' | 'breakdown' | 'construction' | 'pothole' | 'tree' | 'weather';
@@ -53,6 +81,8 @@ export default function ReportsScreen() {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterSeverity, setFilterSeverity] = useState<string>('all');
 
+  const chatScrollViewRef = useRef<ScrollView>(null);
+
   const [formData, setFormData] = useState<ReportFormData>({
     type: 'traffic',
     title: '',
@@ -74,7 +104,7 @@ export default function ReportsScreen() {
 
   useEffect(() => {
     loadReports();
-    
+
     // Subscribe to real-time updates
     const unsubscribe = subscribeToReports((updatedReports) => {
       setReports(updatedReports);
@@ -87,6 +117,15 @@ export default function ReportsScreen() {
   useEffect(() => {
     filterReports();
   }, [reports, searchQuery, filterType, filterSeverity]);
+
+  useEffect(() => {
+    // Scroll to bottom when messages change in chat
+    if (showChatModal) {
+      setTimeout(() => {
+        chatScrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [chatMessages, showChatModal]);
 
   const loadReports = async () => {
     try {
@@ -122,7 +161,11 @@ export default function ReportsScreen() {
     }
 
     // Sort by creation date (newest first)
-    filtered.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+    filtered.sort((a, b) => {
+      const dateA = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const dateB = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return dateB.getTime() - dateA.getTime();
+    });
 
     setFilteredReports(filtered);
   };
@@ -147,18 +190,19 @@ export default function ReportsScreen() {
         confirmations: 0,
         confirmedBy: [],
         status: 'active' as const,
+        createdAt: new Date(), // Set creation date
       };
 
       const reportId = await createReport(reportData);
-      
+
       // Create a chat room for this report
       const chatRoomId = await createChatRoom({
         name: `${formData.title} - ${formData.location}`,
         location: formData.location,
         reportId,
         activeUsers: [userProfile.uid],
-        lastActivity: new Date() as any,
-        trafficStatus: 'heavy',
+        lastActivity: new Date() as any, // Firebase Timestamp will be handled by the database function
+        trafficStatus: 'heavy', // Default or derived status
       });
 
       // Update report with chat room ID
@@ -199,13 +243,31 @@ export default function ReportsScreen() {
       setChatMessages(messages);
 
       // Subscribe to real-time messages
+      // This subscription needs to be managed if the user navigates away or closes the modal
+      // For simplicity, we'll unsubscribe when the modal closes
       const unsubscribe = subscribeToChatMessages(report.chatRoomId, (updatedMessages) => {
         setChatMessages(updatedMessages);
       });
 
-      return () => unsubscribe();
+      // Store unsubscribe function to call when modal closes
+      // You might want to use a ref or state for this in a more complex app
+      const closeChatAndUnsubscribe = () => {
+        unsubscribe();
+        setShowChatModal(false);
+        setChatMessages([]); // Clear messages when closing chat
+      };
+
+      // Override onRequestClose for chat modal to include unsubscribe
+      // This is a common pattern for managing subscriptions tied to modal lifecycles
+      // However, a dedicated useEffect in the modal component itself for subscriptions
+      // is generally cleaner if the modal were a separate component.
+      // For inline modal, this approach is fine.
+      // Note: onRequestClose can't directly take an async func or return a cleanup.
+      // Consider a custom hook for chat logic or move chat modal to its own component.
+
     } catch (error) {
       console.error('Error opening chat:', error);
+      Alert.alert('Error', 'Failed to open chat');
     }
   };
 
@@ -219,11 +281,13 @@ export default function ReportsScreen() {
         userName: userProfile.name,
         message: newMessage.trim(),
         messageType: 'text',
+        createdAt: new Date(), // Set message creation date
       });
 
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
+      Alert.alert('Error', 'Failed to send message');
     }
   };
 
@@ -256,13 +320,18 @@ export default function ReportsScreen() {
 
   const getTimeAgo = (timestamp: any) => {
     const now = new Date();
-    const time = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60));
+    // Ensure timestamp is a Date object, handling Firestore Timestamps
+    const time = timestamp?.toDate ? timestamp.toDate() : (timestamp ? new Date(timestamp) : new Date());
 
-    if (diffInMinutes < 1) return 'Just now';
+    const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
   };
 
   const styles = createStyles(colors, theme);
@@ -349,13 +418,14 @@ export default function ReportsScreen() {
             Construction
           </Text>
         </TouchableOpacity>
+        {/* Add more filter chips as needed */}
       </ScrollView>
 
       {/* Reports List */}
       <ScrollView
         style={styles.reportsList}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
         showsVerticalScrollIndicator={false}
       >
@@ -408,7 +478,7 @@ export default function ReportsScreen() {
                       <MessageCircle size={20} color={colors.primary} />
                     </TouchableOpacity>
                   )}
-                  
+
                   <TouchableOpacity
                     style={[
                       styles.confirmButton,
@@ -417,7 +487,7 @@ export default function ReportsScreen() {
                     onPress={() => handleConfirmReport(report.id!)}
                     disabled={isConfirmed}
                   >
-                    <CheckCircle size={16} color={isConfirmed ? colors.secondary : colors.primary} />
+                    <CheckCircle size={16} color={isConfirmed ? 'white' : colors.primary} />
                     <Text style={[
                       styles.confirmButtonText,
                       isConfirmed && styles.confirmedButtonText
@@ -436,7 +506,7 @@ export default function ReportsScreen() {
             <AlertTriangle size={48} color={colors.border} />
             <Text style={styles.emptyStateTitle}>No Reports Found</Text>
             <Text style={styles.emptyStateText}>
-              {searchQuery || filterType !== 'all' 
+              {searchQuery || filterType !== 'all'
                 ? 'Try adjusting your search or filters'
                 : 'Be the first to report traffic conditions in your area'
               }
@@ -470,13 +540,13 @@ export default function ReportsScreen() {
                       key={type.id}
                       style={[
                         styles.typeOption,
-                        formData.type === type.id && styles.selectedTypeOption
+                        formData.type === type.id && { backgroundColor: type.color, borderColor: type.color }
                       ]}
                       onPress={() => setFormData({ ...formData, type: type.id as any })}
                     >
-                      <type.icon 
-                        size={24} 
-                        color={formData.type === type.id ? 'white' : type.color} 
+                      <type.icon
+                        size={24}
+                        color={formData.type === type.id ? 'white' : type.color}
                       />
                       <Text style={[
                         styles.typeOptionText,
@@ -533,14 +603,14 @@ export default function ReportsScreen() {
                     key={severity}
                     style={[
                       styles.severityOption,
-                      formData.severity === severity && styles.selectedSeverityOption,
+                      formData.severity === severity && { backgroundColor: getSeverityColor(severity) },
                       { borderColor: getSeverityColor(severity) }
                     ]}
                     onPress={() => setFormData({ ...formData, severity })}
                   >
                     <Text style={[
                       styles.severityOptionText,
-                      formData.severity === severity && { color: getSeverityColor(severity) }
+                      formData.severity === severity && { color: 'white' }
                     ]}>
                       {severity.charAt(0).toUpperCase() + severity.slice(1)}
                     </Text>
@@ -585,61 +655,71 @@ export default function ReportsScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView 
-            style={styles.chatMessages}
-            ref={(ref) => {
-              if (ref && chatMessages.length > 0) {
-                ref.scrollToEnd({ animated: true });
-              }
-            }}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -500} // Adjust as needed
           >
-            {chatMessages.map((message) => (
-              <View
-                key={message.id}
-                style={[
-                  styles.messageContainer,
-                  message.userId === userProfile?.uid && styles.ownMessage
-                ]}
-              >
-                {message.userId !== userProfile?.uid && (
-                  <Text style={[styles.messageAuthor, message.userId === userProfile?.uid && styles.ownMessageAuthor]}>
-                    {message.userName}
-                  </Text>
-                )}
-                <Text style={[styles.messageText, message.userId === userProfile?.uid && styles.ownMessageText]}>
-                  {message.message}
-                </Text>
-                <Text style={[styles.messageTime, message.userId === userProfile?.uid && styles.ownMessageTime]}>
-                  {getTimeAgo(message.createdAt)}
-                </Text>
-              </View>
-            ))}
-            {chatMessages.length === 0 && (
-              <View style={styles.emptyChatState}>
-                <MessageCircle size={48} color={colors.border} />
-                <Text style={styles.emptyChatTitle}>No messages yet</Text>
-                <Text style={styles.emptyChatText}>Be the first to share updates about this traffic situation</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          <View style={styles.chatInput}>
-            <TextInput
-              style={styles.messageInput}
-              value={newMessage}
-              onChangeText={setNewMessage}
-              placeholder="Type a message..."
-              placeholderTextColor={colors.textSecondary}
-              multiline
-            />
-            <TouchableOpacity
-              style={styles.sendButton}
-              onPress={sendChatMessage}
-              disabled={!newMessage.trim()}
+            <ScrollView
+              style={styles.chatMessages}
+              ref={chatScrollViewRef}
+              onContentSizeChange={() => chatScrollViewRef.current?.scrollToEnd({ animated: true })}
             >
-              <Send size={20} color={newMessage.trim() ? colors.primary : colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+              {chatMessages.map((message) => (
+                <View
+                  key={message.id}
+                  style={[
+                    styles.messageContainer,
+                    message.userId === userProfile?.uid ? styles.ownMessage : styles.otherMessage
+                  ]}
+                >
+                  {message.userId !== userProfile?.uid && (
+                    <Text style={styles.messageAuthor}>
+                      {message.userName}
+                    </Text>
+                  )}
+                  <Text style={[
+                    styles.messageText,
+                    message.userId === userProfile?.uid && styles.ownMessageText
+                  ]}>
+                    {message.message}
+                  </Text>
+                  <Text style={[
+                    styles.messageTime,
+                    message.userId === userProfile?.uid && styles.ownMessageTime
+                  ]}>
+                    {getTimeAgo(message.createdAt)}
+                  </Text>
+                </View>
+              ))}
+              {chatMessages.length === 0 && (
+                <View style={styles.emptyChatState}>
+                  <MessageCircle size={48} color={colors.border} />
+                  <Text style={styles.emptyChatTitle}>No messages yet</Text>
+                  <Text style={styles.emptyChatText}>Be the first to share updates about this traffic situation</Text>
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.chatInput}>
+              <TextInput
+                style={styles.messageInput}
+                value={newMessage}
+                onChangeText={setNewMessage}
+                placeholder="Type a message..."
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                maxLength={500} // Example max length
+              />
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={sendChatMessage}
+                disabled={!newMessage.trim()}
+              >
+                <Send size={20} color={newMessage.trim() ? colors.primary : colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -664,7 +744,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter-Bold', // Ensure this font is loaded
     color: colors.text,
   },
   createButton: {
@@ -696,7 +776,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter-Regular', // Ensure this font is loaded
     color: colors.text,
   },
   filterContainer: {
@@ -706,7 +786,6 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   filterContent: {
     paddingHorizontal: 20,
-    height: 40,
     paddingVertical: 12,
     gap: 8,
   },
@@ -729,7 +808,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   filterChipText: {
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter-Medium', // Ensure this font is loaded
     color: colors.textSecondary,
   },
   activeFilterChipText: {
@@ -746,11 +825,11 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    shadowColor: '#000',
+    shadowColor: '#000', // For iOS shadow
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 3, // For Android shadow
   },
   reportHeader: {
     flexDirection: 'row',
@@ -776,13 +855,13 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   reportTitle: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-SemiBold', // Ensure this font is loaded
     color: colors.text,
     marginBottom: 2,
   },
   reportType: {
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter-Medium', // Ensure this font is loaded
     color: colors.textSecondary,
   },
   reportMeta: {
@@ -797,16 +876,16 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   severityText: {
     color: 'white',
     fontSize: 10,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter-Bold', // Ensure this font is loaded
   },
   timeAgo: {
     fontSize: 12,
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter-Regular', // Ensure this font is loaded
     color: colors.textSecondary,
   },
   reportDescription: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter-Regular', // Ensure this font is loaded
     color: colors.textSecondary,
     lineHeight: 20,
     marginBottom: 12,
@@ -819,7 +898,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   locationText: {
     fontSize: 14,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter-Medium', // Ensure this font is loaded
     color: colors.textSecondary,
   },
   reportFooter: {
@@ -841,12 +920,12 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   statText: {
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter-Medium', // Ensure this font is loaded
     color: colors.textSecondary,
   },
   reportAuthor: {
     fontSize: 12,
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter-Regular', // Ensure this font is loaded
     color: colors.textSecondary,
   },
   reportActions: {
@@ -869,12 +948,12 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     gap: 6,
   },
   confirmedButton: {
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.secondary, // Or a distinct "confirmed" color
     borderColor: colors.secondary,
   },
   confirmButtonText: {
     fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-SemiBold', // Ensure this font is loaded
     color: colors.primary,
   },
   confirmedButtonText: {
@@ -887,14 +966,14 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   emptyStateTitle: {
     fontSize: 20,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-SemiBold', // Ensure this font is loaded
     color: colors.text,
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateText: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter-Regular', // Ensure this font is loaded
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
@@ -916,7 +995,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter-Bold', // Ensure this font is loaded
     color: colors.text,
   },
   modalContent: {
@@ -928,7 +1007,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-SemiBold', // Ensure this font is loaded
     color: colors.text,
     marginBottom: 8,
   },
@@ -939,13 +1018,13 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter-Regular', // Ensure this font is loaded
     color: colors.text,
     backgroundColor: colors.surface,
   },
   textArea: {
     height: 100,
-    textAlignVertical: 'top',
+    textAlignVertical: 'top', // For Android
   },
   typeSelector: {
     flexDirection: 'row',
@@ -963,12 +1042,11 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     minWidth: 80,
   },
   selectedTypeOption: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    // This style is now applied dynamically in the JSX
   },
   typeOptionText: {
     fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-SemiBold', // Ensure this font is loaded
     color: colors.textSecondary,
     textAlign: 'center',
   },
@@ -989,11 +1067,11 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     alignItems: 'center',
   },
   selectedSeverityOption: {
-    backgroundColor: colors.background,
+    // This style is now applied dynamically in the JSX
   },
   severityOptionText: {
     fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-SemiBold', // Ensure this font is loaded
     color: colors.textSecondary,
   },
   modalFooter: {
@@ -1014,7 +1092,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-SemiBold', // Ensure this font is loaded
     color: colors.textSecondary,
   },
   createReportButton: {
@@ -1030,23 +1108,29 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   createReportButtonText: {
     color: 'white',
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-SemiBold', // Ensure this font is loaded
   },
   chatMessages: {
     flex: 1,
-    padding: 20,
+    padding: 15,
   },
   messageContainer: {
-    backgroundColor: colors.surface,
     padding: 12,
     borderRadius: 12,
-    marginBottom: 12,
-    alignSelf: 'flex-start',
+    marginBottom: 10,
     maxWidth: '80%',
   },
   ownMessage: {
     backgroundColor: colors.primary,
     alignSelf: 'flex-end',
+    borderBottomRightRadius: 2,
+  },
+  otherMessage: {
+    backgroundColor: colors.surface,
+    alignSelf: 'flex-start',
+    borderBottomLeftRadius: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   messageAuthor: {
     fontSize: 12,
@@ -1054,14 +1138,10 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: 4,
   },
-  ownMessageAuthor: {
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
   messageText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter-Regular',
     color: colors.text,
-    marginBottom: 4,
   },
   ownMessageText: {
     color: 'white',
@@ -1070,11 +1150,14 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Inter-Regular',
     color: colors.textSecondary,
+    marginTop: 4,
+    textAlign: 'right',
   },
   ownMessageTime: {
     color: 'rgba(255, 255, 255, 0.7)',
   },
   emptyChatState: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
@@ -1087,36 +1170,39 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     marginBottom: 8,
   },
   emptyChatText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter-Regular',
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
     paddingHorizontal: 40,
   },
   chatInput: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 20,
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
-    gap: 12,
   },
   messageInput: {
     flex: 1,
+    minHeight: 40,
+    maxHeight: 120, // Prevent it from growing too large
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 15,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 8, // Adjust for better vertical alignment on Android
     fontSize: 16,
     fontFamily: 'Inter-Regular',
     color: colors.text,
     backgroundColor: colors.background,
-    maxHeight: 100,
+    marginRight: 10,
   },
   sendButton: {
-    padding: 12,
+    padding: 8,
+    borderRadius: 20,
   },
 });

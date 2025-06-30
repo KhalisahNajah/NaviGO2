@@ -163,7 +163,7 @@ export default function Navigate() {
         <View style={styles.header}>
           <View style={styles.logoContainer}>
             <Image
-              source={{ uri: 'https://images.pexels.com/photos/1319854/pexels-photo-1319854.jpeg?auto=compress&cs=tinysrgb&w=60&h=40&fit=crop' }}
+              source={{ uri: 'https://i.pinimg.com/736x/2c/42/0b/2c420ba439ecfff12f1b214fe42783f5.jpg' }}
               style={styles.logo}
               resizeMode="contain"
             />

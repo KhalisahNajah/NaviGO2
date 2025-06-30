@@ -99,41 +99,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     console.log('AuthProvider: Firebase auth is available, setting up listener');
     
-    // Set up auth state listener
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('AuthProvider: Auth state changed:', firebaseUser ? `User: ${firebaseUser.email}` : 'No user');
-      
-      try {
-        setUser(firebaseUser);
+    // Set up auth state listener with error handling
+    const unsubscribe = onAuthStateChanged(
+      auth, 
+      async (firebaseUser) => {
+        console.log('AuthProvider: Auth state changed:', firebaseUser ? `User: ${firebaseUser.email}` : 'No user');
         
-        if (firebaseUser) {
-          // Fetch user profile from Firestore
-          console.log('AuthProvider: Fetching user profile for:', firebaseUser.uid);
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          if (userDoc.exists()) {
-            const profileData = userDoc.data();
-            const profile = {
-              ...profileData,
-              createdAt: profileData.createdAt?.toDate?.() || new Date(),
-              updatedAt: profileData.updatedAt?.toDate?.() || new Date(),
-            } as UserProfile;
-            console.log('AuthProvider: User profile loaded:', profile.name);
-            setUserProfile(profile);
+        try {
+          setUser(firebaseUser);
+          
+          if (firebaseUser) {
+            // Fetch user profile from Firestore
+            console.log('AuthProvider: Fetching user profile for:', firebaseUser.uid);
+            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+            if (userDoc.exists()) {
+              const profileData = userDoc.data();
+              const profile = {
+                ...profileData,
+                createdAt: profileData.createdAt?.toDate?.() || new Date(),
+                updatedAt: profileData.updatedAt?.toDate?.() || new Date(),
+              } as UserProfile;
+              console.log('AuthProvider: User profile loaded:', profile.name);
+              setUserProfile(profile);
+            } else {
+              console.log('AuthProvider: No user profile found in Firestore');
+              setUserProfile(null);
+            }
           } else {
-            console.log('AuthProvider: No user profile found in Firestore');
+            console.log('AuthProvider: User signed out, clearing profile');
             setUserProfile(null);
           }
-        } else {
-          console.log('AuthProvider: User signed out, clearing profile');
+        } catch (error) {
+          console.error('AuthProvider: Error in auth state change handler:', error);
           setUserProfile(null);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('AuthProvider: Error in auth state change handler:', error);
-        setUserProfile(null);
-      } finally {
+      },
+      (error) => {
+        console.error('AuthProvider: Auth state listener error:', error);
         setLoading(false);
       }
-    });
+    );
 
     // Cleanup function
     return () => {

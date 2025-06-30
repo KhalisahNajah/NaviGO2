@@ -167,7 +167,6 @@ export default function Navigate() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.title}>naviGO</Text>
           </View>
           <TouchableOpacity style={styles.settingsButton}>
             <Settings size={24} color={colors.textSecondary} />

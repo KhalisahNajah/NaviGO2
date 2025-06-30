@@ -24,6 +24,7 @@ export default function ProfileScreen() {
   const [showRegionModal, setShowRegionModal] = useState(false);
   const [showFuelTypeModal, setShowFuelTypeModal] = useState(false);
   const [editedProfile, setEditedProfile] = useState(userProfile);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const currencies = [
     { code: 'USD', name: 'US Dollar', symbol: '$' },
@@ -124,6 +125,8 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
+    if (isLoggingOut) return; // Prevent multiple logout attempts
+    
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out? You will need to log in again to access the app.',
@@ -136,24 +139,26 @@ export default function ProfileScreen() {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
+            setIsLoggingOut(true);
+            
             try {
               console.log('Profile: Starting logout process...');
               
-              // Show loading state
+              // Show loading state immediately
               Alert.alert('Signing Out', 'Please wait...', [], { cancelable: false });
               
               // Perform logout
               await logout();
               
-              console.log('Profile: Logout completed, should redirect to sign-in');
+              console.log('Profile: Logout completed successfully');
               
             } catch (error: any) {
               console.error('Profile: Logout error:', error);
               
               // Even if there's an error, try to force navigation
               Alert.alert(
-                'Logout Error', 
-                'There was an issue signing out, but you will be redirected to the login page.',
+                'Logout Complete', 
+                'You have been signed out.',
                 [
                   {
                     text: 'OK',
@@ -164,6 +169,8 @@ export default function ProfileScreen() {
                   }
                 ]
               );
+            } finally {
+              setIsLoggingOut(false);
             }
           },
         },
@@ -238,8 +245,12 @@ export default function ProfileScreen() {
           >
             <Edit3 size={20} color={colors.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <LogOut size={20} color="#EF4444" />
+          <TouchableOpacity 
+            style={[styles.logoutButton, isLoggingOut && styles.disabledButton]} 
+            onPress={handleLogout}
+            disabled={isLoggingOut}
+          >
+            <LogOut size={20} color={isLoggingOut ? "#999" : "#EF4444"} />
           </TouchableOpacity>
         </View>
       </View>
@@ -734,6 +745,10 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: '#EF4444',
+  },
+  disabledButton: {
+    opacity: 0.5,
+    borderColor: '#999',
   },
   content: {
     flex: 1,

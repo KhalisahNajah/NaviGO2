@@ -87,6 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     console.log('AuthProvider: Setting up auth state listener...');
@@ -118,7 +119,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           try {
             setUser(firebaseUser);
             
-            if (firebaseUser) {
+            if (firebaseUser && !isLoggingOut) {
               // Fetch user profile from Firestore
               console.log('📥 AuthProvider: Fetching user profile for:', firebaseUser.uid);
               const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
@@ -136,14 +137,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setUserProfile(null);
               }
             } else {
-              console.log('👋 AuthProvider: User signed out, clearing profile');
+              console.log('👋 AuthProvider: User signed out or logging out, clearing profile');
               setUserProfile(null);
+              
+              // If user is null and we're not in the middle of logging out, redirect to sign-in
+              if (!firebaseUser && !isLoggingOut) {
+                console.log('🔄 AuthProvider: No user detected, redirecting to sign-in');
+                setTimeout(() => {
+                  router.replace('/(auth)/sign-in');
+                }, 100);
+              }
             }
           } catch (error) {
             console.error('❌ AuthProvider: Error in auth state change handler:', error);
             setUserProfile(null);
           } finally {
-            setLoading(false);
+            if (!isLoggingOut) {
+              setLoading(false);
+            }
           }
         },
         (error) => {
@@ -173,7 +184,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     };
-  }, []);
+  }, [isLoggingOut]);
 
   const signIn = async (email: string, password: string) => {
     if (!auth) {
@@ -249,12 +260,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     try {
       console.log('👋 AuthProvider: Starting logout process');
+      setIsLoggingOut(true);
+      setLoading(true);
       
       // Clear user state immediately to prevent UI flicker
       console.log('🧹 AuthProvider: Clearing user state');
       setUser(null);
       setUserProfile(null);
-      setLoading(true);
       
       // Sign out from Firebase
       console.log('🔐 AuthProvider: Signing out from Firebase');
@@ -262,30 +274,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('✅ AuthProvider: Firebase sign out successful');
       
       // Small delay to ensure state is cleared
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Force navigation to sign-in page
-      console.log('🔄 AuthProvider: Redirecting to sign-in page');
-      router.replace('/(auth)/sign-in');
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log('✅ AuthProvider: Logout process completed successfully');
       
     } catch (error: any) {
       console.error('❌ AuthProvider: Sign out error:', error);
       
-      // Even if Firebase sign out fails, clear local state and redirect
+      // Even if Firebase sign out fails, clear local state
       console.log('🔄 AuthProvider: Forcing logout despite error');
       setUser(null);
       setUserProfile(null);
       
-      // Force redirect regardless of error
+      throw new Error(error.message);
+    } finally {
+      setIsLoggingOut(false);
+      setLoading(false);
+      
+      // Force navigation to sign-in page after logout completes
+      console.log('🔄 AuthProvider: Redirecting to sign-in page');
       setTimeout(() => {
         router.replace('/(auth)/sign-in');
       }, 100);
-      
-      throw new Error(error.message);
-    } finally {
-      setLoading(false);
     }
   };
 

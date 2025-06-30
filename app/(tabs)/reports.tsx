@@ -817,7 +817,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   reportsList: {
     flex: 0.5,
     padding: 20,
-    paddingBottom: 60 + (insets?.bottom || 0),
+   
   },
   reportCard: {
     backgroundColor: colors.surface,

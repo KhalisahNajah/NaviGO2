@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { router } from 'expo-router';
-import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
+import LoadingScreen from '@/components/LoadingScreen';
 
 export default function IndexScreen() {
   const { user, loading } = useAuth();
@@ -25,11 +26,10 @@ export default function IndexScreen() {
   // Show loading screen while checking auth state
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#3B5284" />
-      <Text style={styles.loadingText}>Loading naviGO...</Text>
-      <Text style={styles.debugText}>
-        Auth Status: {loading ? 'Checking...' : user ? 'Authenticated' : 'Not authenticated'}
-      </Text>
+      <LoadingScreen 
+        message={loading ? "Checking authentication..." : "Redirecting..."}
+        showLogo={true}
+      />
     </View>
   );
 }
@@ -38,19 +38,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F0F8FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: '#3B5284',
-  },
-  debugText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: '#5D6E1E',
-    marginTop: 8,
   },
 });

@@ -815,7 +815,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     color: 'white',
   },
   reportsList: {
-    flex: 1,
+    flex: 0.5,
     padding: 20,
      paddingHorizontal: 20,
     // Remove paddingTop here so the content can start higher

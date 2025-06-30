@@ -781,7 +781,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   filterContainer: {
     backgroundColor: colors.surface,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0,
     borderBottomColor: colors.border,
   },
   filterContent: {
@@ -816,7 +816,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   reportsList: {
     flex: 0.5,
-    paddingTop: 0, // You might want to adjust this further (e.g., to 0 or 5)
+    paddingTop: 10, // You might want to adjust this further (e.g., to 0 or 5)
                     // depending on how much gap you want between filters and first report.
     paddingHorizontal: 20,
    

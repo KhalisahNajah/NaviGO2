@@ -135,6 +135,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await logout();
+              // Navigate to sign-in page after successful logout
               router.replace('/(auth)/sign-in');
             } catch (error: any) {
               Alert.alert('Error', error.message);

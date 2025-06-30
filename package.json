@@ -4,10 +4,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "start": "expo start",
     "dev": "EXPO_NO_TELEMETRY=1 expo start",
     "build:web": "expo export --platform web",
     "lint": "expo lint",
-    "deploy": "npm run build:web && netlify deploy --prod --dir=dist"
+    "deploy": "npm run build:web && netlify deploy --prod --dir=dist",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",

@@ -33,57 +33,59 @@ const firebaseConfig = {
   measurementId: "G-0089LCZZ8G"
 };
 
-console.log(`Firebase: Initializing for ${Platform.OS} with App ID: ${firebaseConfig.appId}`);
+console.log(`🔥 Firebase: Initializing for ${Platform.OS} with App ID: ${firebaseConfig.appId}`);
 
-// Initialize Firebase app (only once)
+// Initialize Firebase app (prevent duplicate initialization)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Auth with proper error handling
+// Initialize Auth with robust error handling
 let auth;
 
 try {
   if (Platform.OS === 'web') {
-    // For web, use getAuth
+    // Web platform - use standard getAuth
     auth = getAuth(app);
-    console.log('Firebase Auth initialized for web');
+    console.log('✅ Firebase Auth initialized for web');
   } else {
-    // For React Native, try initializeAuth first
+    // React Native platforms - use initializeAuth with AsyncStorage
     auth = initializeAuth(app, {
       persistence: getReactNativePersistence(AsyncStorage)
     });
-    console.log(`Firebase Auth initialized for ${Platform.OS} with AsyncStorage persistence`);
+    console.log(`✅ Firebase Auth initialized for ${Platform.OS} with AsyncStorage persistence`);
   }
 } catch (error: any) {
-  console.log('Firebase Auth initialization error, attempting fallback:', error.message);
+  console.log('⚠️ Firebase Auth initialization error, attempting fallback:', error.message);
   
-  // Only attempt fallback if the error indicates auth is already initialized
-  if (error.code === 'auth/already-initialized' || error.message?.includes('already initialized')) {
+  // Only attempt getAuth fallback for specific errors
+  if (
+    error.code === 'auth/already-initialized' || 
+    error.message?.includes('already initialized') ||
+    error.message?.includes('already exists')
+  ) {
     try {
       auth = getAuth(app);
-      console.log(`Firebase Auth fallback successful - using existing instance for ${Platform.OS}`);
+      console.log(`✅ Firebase Auth fallback successful for ${Platform.OS}`);
     } catch (fallbackError: any) {
-      console.error('Firebase Auth fallback also failed:', fallbackError);
+      console.error('❌ Firebase Auth fallback failed:', fallbackError.message);
       throw new Error(`Failed to initialize Firebase Auth: ${fallbackError.message}`);
     }
   } else {
-    // For other errors, don't attempt fallback
-    console.error('Firebase Auth initialization failed with unexpected error:', error);
+    console.error('❌ Unexpected Firebase Auth error:', error.message);
     throw new Error(`Failed to initialize Firebase Auth: ${error.message}`);
   }
 }
 
-// Ensure auth is defined before proceeding
+// Ensure auth is properly initialized
 if (!auth) {
-  throw new Error('Firebase Auth could not be initialized');
+  throw new Error('❌ Firebase Auth could not be initialized');
 }
 
-// Initialize Firestore
+// Initialize other Firebase services
 export const db = getFirestore(app);
-
-// Initialize Storage
 export const storage = getStorage(app);
+
+console.log('✅ Firebase services initialized successfully');
 
 // Export auth and app
 export { auth, app };
-
 export default app;

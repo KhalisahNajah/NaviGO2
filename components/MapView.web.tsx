@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,7 +8,6 @@ import {
   TextInput,
   ScrollView,
   Alert,
-  Image,
 } from 'react-native';
 import { Search, Navigation, MapPin, Crosshair, Layers, Route, Clock, DollarSign, X, Map as MapIcon, CircleAlert as AlertCircle } from 'lucide-react-native';
 
@@ -46,11 +45,22 @@ interface RouteOption {
 const { width, height } = Dimensions.get('window');
 const GOOGLE_MAPS_API_KEY = 'AIzaSyBzw3e-CjEHqn3iq4QfLS6GkQ6jrm7eqL0';
 
+// Declare global google maps types
+declare global {
+  interface Window {
+    google: any;
+    initMap: () => void;
+  }
+}
+
 export default function MapViewComponent({
   onRouteSelect,
   showSearch = true,
   initialRegion,
 }: MapViewComponentProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const googleMapRef = useRef<any>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -58,41 +68,135 @@ export default function MapViewComponent({
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<RouteOption | null>(null);
   const [showRoutes, setShowRoutes] = useState(false);
-  const [mapType, setMapType] = useState<'roadmap' | 'satellite' | 'hybrid'>('roadmap');
   const [currentLocation, setCurrentLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
 
   useEffect(() => {
+    loadGoogleMapsScript();
     getCurrentLocation();
   }, []);
+
+  const loadGoogleMapsScript = () => {
+    // Check if Google Maps is already loaded
+    if (window.google && window.google.maps) {
+      initializeMap();
+      return;
+    }
+
+    // Create script element
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
+    script.async = true;
+    script.defer = true;
+
+    // Set up callback
+    window.initMap = initializeMap;
+
+    // Add script to document
+    document.head.appendChild(script);
+
+    // Handle script load error
+    script.onerror = () => {
+      console.error('Failed to load Google Maps script');
+      Alert.alert('Error', 'Failed to load Google Maps. Please check your internet connection.');
+    };
+  };
+
+  const initializeMap = () => {
+    if (!mapRef.current) return;
+
+    try {
+      const defaultCenter = initialRegion 
+        ? { lat: initialRegion.latitude, lng: initialRegion.longitude }
+        : { lat: 37.78825, lng: -122.4324 }; // San Francisco default
+
+      googleMapRef.current = new window.google.maps.Map(mapRef.current, {
+        center: defaultCenter,
+        zoom: 13,
+        mapTypeId: 'roadmap',
+        styles: [
+          {
+            featureType: 'poi',
+            elementType: 'labels',
+            stylers: [{ visibility: 'on' }]
+          }
+        ],
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true,
+        zoomControl: true,
+      });
+
+      setMapLoaded(true);
+      console.log('Google Maps initialized successfully');
+
+      // Add current location marker if available
+      if (currentLocation) {
+        addCurrentLocationMarker();
+      }
+    } catch (error) {
+      console.error('Error initializing Google Maps:', error);
+    }
+  };
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setCurrentLocation({
+          const location = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-          });
+          };
+          setCurrentLocation(location);
+          
+          // Update map center if map is loaded
+          if (googleMapRef.current) {
+            googleMapRef.current.setCenter({
+              lat: location.latitude,
+              lng: location.longitude
+            });
+            addCurrentLocationMarker();
+          }
         },
         (error) => {
           console.error('Error getting location:', error);
-          // Default to San Francisco if location access is denied
-          setCurrentLocation({
+          // Use default location (San Francisco)
+          const defaultLocation = {
             latitude: 37.78825,
             longitude: -122.4324,
-          });
+          };
+          setCurrentLocation(defaultLocation);
         }
       );
     } else {
-      // Default location if geolocation is not supported
+      console.error('Geolocation is not supported by this browser');
+      // Use default location
       setCurrentLocation({
         latitude: 37.78825,
         longitude: -122.4324,
       });
     }
+  };
+
+  const addCurrentLocationMarker = () => {
+    if (!googleMapRef.current || !currentLocation) return;
+
+    new window.google.maps.Marker({
+      position: { lat: currentLocation.latitude, lng: currentLocation.longitude },
+      map: googleMapRef.current,
+      title: 'Your Location',
+      icon: {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="8" fill="#2563EB" stroke="white" stroke-width="2"/>
+            <circle cx="12" cy="12" r="3" fill="white"/>
+          </svg>
+        `),
+        scaledSize: new window.google.maps.Size(24, 24),
+      },
+    });
   };
 
   const searchPlaces = async (query: string) => {
@@ -120,13 +224,48 @@ export default function MapViewComponent({
     }
   };
 
-  const selectSearchResult = (result: SearchResult) => {
+  const selectSearchResult = async (result: SearchResult) => {
     setSelectedDestination(result.structured_formatting.main_text);
     setSearchQuery(result.structured_formatting.main_text);
     setShowSearchResults(false);
     
-    // Calculate mock routes
-    calculateRoutes();
+    // Get place details and add marker
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${result.place_id}&fields=geometry,name,formatted_address&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      
+      const data = await response.json();
+      
+      if (data.result && data.result.geometry && googleMapRef.current) {
+        const location = data.result.geometry.location;
+        
+        // Add destination marker
+        new window.google.maps.Marker({
+          position: { lat: location.lat, lng: location.lng },
+          map: googleMapRef.current,
+          title: data.result.name || data.result.formatted_address,
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="#EF4444" stroke="white" stroke-width="2"/>
+                <circle cx="12" cy="10" r="3" fill="white"/>
+              </svg>
+            `),
+            scaledSize: new window.google.maps.Size(24, 24),
+          },
+        });
+        
+        // Center map on destination
+        googleMapRef.current.setCenter({ lat: location.lat, lng: location.lng });
+        googleMapRef.current.setZoom(15);
+        
+        // Calculate mock routes
+        calculateRoutes();
+      }
+    } catch (error) {
+      console.error('Error getting place details:', error);
+    }
   };
 
   const calculateRoutes = () => {
@@ -194,6 +333,12 @@ export default function MapViewComponent({
     setRoutes([]);
     setSelectedRoute(null);
     setShowRoutes(false);
+    
+    // Clear markers and reset map
+    if (googleMapRef.current) {
+      // This would clear all markers - in a real app you'd want to manage markers more carefully
+      initializeMap();
+    }
   };
 
   const openInGoogleMaps = () => {
@@ -209,57 +354,56 @@ export default function MapViewComponent({
     }
   };
 
-  const getStaticMapUrl = () => {
-    const center = currentLocation 
-      ? `${currentLocation.latitude},${currentLocation.longitude}`
-      : '37.78825,-122.4324';
+  const centerOnCurrentLocation = () => {
+    if (googleMapRef.current && currentLocation) {
+      googleMapRef.current.setCenter({
+        lat: currentLocation.latitude,
+        lng: currentLocation.longitude
+      });
+      googleMapRef.current.setZoom(15);
+    } else {
+      getCurrentLocation();
+    }
+  };
+
+  const changeMapType = () => {
+    if (!googleMapRef.current) return;
     
-    const markers = currentLocation 
-      ? `&markers=color:blue%7Clabel:A%7C${currentLocation.latitude},${currentLocation.longitude}`
-      : '';
+    const currentType = googleMapRef.current.getMapTypeId();
+    const types = ['roadmap', 'satellite', 'hybrid', 'terrain'];
+    const currentIndex = types.indexOf(currentType);
+    const nextIndex = (currentIndex + 1) % types.length;
     
-    const destinationMarker = selectedDestination && currentLocation
-      ? `&markers=color:red%7Clabel:B%7C${currentLocation.latitude + 0.01},${currentLocation.longitude + 0.01}`
-      : '';
-    
-    return `https://maps.googleapis.com/maps/api/staticmap?center=${center}&zoom=13&size=${Math.floor(width)}x${Math.floor(height * 0.6)}&maptype=${mapType}&key=${GOOGLE_MAPS_API_KEY}${markers}${destinationMarker}`;
+    googleMapRef.current.setMapTypeId(types[nextIndex]);
   };
 
   return (
     <View style={styles.container}>
-      {/* Static Map Display */}
+      {/* Google Maps Container */}
       <View style={styles.mapContainer}>
-        <Image
-          source={{ uri: getStaticMapUrl() }}
-          style={styles.staticMap}
-          resizeMode="cover"
+        <div
+          ref={mapRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#f0f0f0',
+          }}
         />
         
-        {/* Web Notice Overlay */}
-        <View style={styles.webNoticeOverlay}>
-          <View style={styles.webNotice}>
-            <AlertCircle size={16} color="#F59E0B" />
-            <Text style={styles.webNoticeText}>
-              Interactive map available on mobile. Click "Open in Google Maps" for full navigation.
-            </Text>
+        {/* Loading overlay */}
+        {!mapLoaded && (
+          <View style={styles.loadingOverlay}>
+            <Text style={styles.loadingText}>Loading Google Maps...</Text>
           </View>
-        </View>
+        )}
 
         {/* Map Controls */}
         <View style={styles.mapControls}>
-          <TouchableOpacity style={styles.controlButton} onPress={getCurrentLocation}>
+          <TouchableOpacity style={styles.controlButton} onPress={centerOnCurrentLocation}>
             <Crosshair size={20} color="#2563EB" />
           </TouchableOpacity>
           
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={() => {
-              const types: Array<'roadmap' | 'satellite' | 'hybrid'> = ['roadmap', 'satellite', 'hybrid'];
-              const currentIndex = types.indexOf(mapType);
-              const nextIndex = (currentIndex + 1) % types.length;
-              setMapType(types[nextIndex]);
-            }}
-          >
+          <TouchableOpacity style={styles.controlButton} onPress={changeMapType}>
             <Layers size={20} color="#2563EB" />
           </TouchableOpacity>
 
@@ -382,36 +526,21 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  staticMap: {
-    width: '100%',
-    height: '100%',
-  },
-  webNoticeOverlay: {
+  loadingOverlay: {
     position: 'absolute',
-    top: 20,
-    left: 20,
-    right: 20,
-    zIndex: 999,
-  },
-  webNotice: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    flexDirection: 'row',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(240, 248, 255, 0.9)',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    zIndex: 1000,
   },
-  webNoticeText: {
-    fontSize: 12,
+  loadingText: {
+    fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#6B7280',
-    flex: 1,
+    color: '#3B5284',
   },
   searchContainer: {
     position: 'absolute',

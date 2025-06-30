@@ -13,7 +13,7 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, LogIn, ArrowRight, Check } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ThemeContext } from '@/contexts/ThemeContext';
@@ -68,6 +68,11 @@ export default function SignUp() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Navigate to sign-in page
+  const goToSignIn = () => {
+    router.push('/(auth)/sign-in');
   };
 
   const styles = createStyles(colors, theme);
@@ -248,18 +253,17 @@ export default function SignUp() {
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* Sign In Link */}
+              {/* Sign In Link - Updated to use router.push */}
               <View style={styles.signInSection}>
                 <Text style={styles.signInText}>Already have an account?</Text>
-                <Link href="/(auth)/sign-in" asChild>
-                  <TouchableOpacity 
-                    style={[styles.signInButton, loading && styles.buttonDisabled]}
-                    disabled={loading}
-                  >
-                    <Text style={styles.signInButtonText}>Log In</Text>
-                    <ArrowRight size={16} color={colors.primary} />
-                  </TouchableOpacity>
-                </Link>
+                <TouchableOpacity 
+                  style={[styles.signInButton, loading && styles.buttonDisabled]}
+                  disabled={loading}
+                  onPress={goToSignIn}
+                >
+                  <Text style={styles.signInButtonText}>Log In</Text>
+                  <ArrowRight size={16} color={colors.primary} />
+                </TouchableOpacity>
               </View>
             </View>
 

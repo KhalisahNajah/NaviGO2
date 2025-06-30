@@ -139,14 +139,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             } else {
               console.log('👋 AuthProvider: User signed out or logging out, clearing profile');
               setUserProfile(null);
-              
-              // If user is null and we're not in the middle of logging out, redirect to sign-in
-              if (!firebaseUser && !isLoggingOut) {
-                console.log('🔄 AuthProvider: No user detected, redirecting to sign-in');
-                setTimeout(() => {
-                  router.replace('/(auth)/sign-in');
-                }, 100);
-              }
             }
           } catch (error) {
             console.error('❌ AuthProvider: Error in auth state change handler:', error);
@@ -220,12 +212,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Update the user's display name
       await updateProfile(user, { displayName: name });
       
-      // Create user profile in Firestore with new driver avatar - CORRECTED LINK
+      // Create user profile in Firestore with new driver avatar
       const newUserProfile: UserProfile = {
         uid: user.uid,
         name,
         email: user.email || '',
-        profilePicture: 'https://i.pinimg.com/736x/48/d6/d5/48d6d52393dae5dca0340c5cfd382477.jpg', // New Driver avatar - CORRECT LINK
+        profilePicture: 'https://i.pinimg.com/736x/48/d6/d5/48d6d52393dae5dca0340c5cfd382477.jpg', // New Driver avatar
         currency: 'USD',
         region: 'North America',
         country: 'United States',
@@ -387,25 +379,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const getAvatarImage = () => {
     if (!userProfile) {
-      // Default for new users - CORRECTED LINK
+      // Default for new users
       return 'https://i.pinimg.com/736x/48/d6/d5/48d6d52393dae5dca0340c5cfd382477.jpg';
     }
     
     const { months, years } = getUserTenure();
     
-    // 5+ years - Highway Hero - CORRECTED LINK
+    // 5+ years - Highway Hero
     if (years >= 5) {
       return 'https://i.pinimg.com/736x/79/bf/06/79bf068a19a32366822007ea60bb9e29.jpg';
     }
-    // 1+ years - Mini Racer - CORRECTED LINK
+    // 1+ years - Mini Racer
     else if (years >= 1) {
       return 'https://i.pinimg.com/736x/f9/ba/9b/f9ba9be42dde39d8915d92f553177a0a.jpg';
     }
-    // 5+ months - Tiny Tires - CORRECTED LINK
+    // 5+ months - Tiny Tires
     else if (months >= 5) {
       return 'https://i.pinimg.com/736x/a4/f5/7c/a4f57c74f3ce84f7277e2d7051a918f8.jpg';
     }
-    // New users (0-5 months) - New Driver - CORRECTED LINK
+    // New users (0-5 months) - New Driver
     else {
       return 'https://i.pinimg.com/736x/48/d6/d5/48d6d52393dae5dca0340c5cfd382477.jpg';
     }

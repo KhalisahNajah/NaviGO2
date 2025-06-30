@@ -11,13 +11,18 @@ export default function IndexScreen() {
     console.log('IndexScreen: Auth state check - User:', user?.email || 'None', 'Loading:', loading);
     
     if (!loading) {
-      if (user) {
-        console.log('IndexScreen: User authenticated, redirecting to tabs');
-        router.replace('/(tabs)');
-      } else {
-        console.log('IndexScreen: No user, redirecting to sign-in');
-        router.replace('/(auth)/sign-in');
-      }
+      // Add a small delay to ensure smooth navigation
+      const timer = setTimeout(() => {
+        if (user) {
+          console.log('IndexScreen: User authenticated, redirecting to tabs');
+          router.replace('/(tabs)');
+        } else {
+          console.log('IndexScreen: No user, redirecting to sign-in');
+          router.replace('/(auth)/sign-in');
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
   }, [user, loading]);
 

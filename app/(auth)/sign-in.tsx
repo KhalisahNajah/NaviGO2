@@ -13,7 +13,7 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Mail, Lock, Eye, EyeOff, LogIn, UserPlus, ArrowRight } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ThemeContext } from '@/contexts/ThemeContext';
@@ -77,6 +77,11 @@ export default function SignIn() {
     } finally {
       setResetLoading(false);
     }
+  };
+
+  // Navigate to sign-up page
+  const goToSignUp = () => {
+    router.push('/(auth)/sign-up');
   };
 
   const styles = createStyles(colors, theme);
@@ -214,21 +219,20 @@ export default function SignIn() {
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* Sign Up Link */}
+              {/* Sign Up Link - Updated to use router.push */}
               <View style={styles.signUpSection}>
                 <Text style={styles.signUpText}>Don't have an account?</Text>
-                <Link href="/(auth)/sign-up" asChild>
-                  <TouchableOpacity 
-                    style={[
-                      styles.signUpButton,
-                      (loading || resetLoading) && styles.buttonDisabled
-                    ]}
-                    disabled={loading || resetLoading}
-                  >
-                    <Text style={styles.signUpButtonText}>Register here</Text>
-                    <ArrowRight size={16} color={colors.primary} />
-                  </TouchableOpacity>
-                </Link>
+                <TouchableOpacity 
+                  style={[
+                    styles.signUpButton,
+                    (loading || resetLoading) && styles.buttonDisabled
+                  ]}
+                  disabled={loading || resetLoading}
+                  onPress={goToSignUp}
+                >
+                  <Text style={styles.signUpButtonText}>Register here</Text>
+                  <ArrowRight size={16} color={colors.primary} />
+                </TouchableOpacity>
               </View>
             </View>
 

@@ -209,12 +209,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Update the user's display name
       await updateProfile(user, { displayName: name });
       
-      // Create user profile in Firestore
+      // Create user profile in Firestore with new driver avatar
       const newUserProfile: UserProfile = {
         uid: user.uid,
         name,
         email: user.email || '',
-        profilePicture: 'https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+        profilePicture: 'https://i.pinimg.com/736x/57/81/49/578149670952517683.jpg', // New Driver avatar
         currency: 'USD',
         region: 'North America',
         country: 'United States',
@@ -362,25 +362,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const getAvatarImage = () => {
-    if (!userProfile) return 'https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop';
+    if (!userProfile) {
+      // Default for new users - cute yellow car
+      return 'https://i.pinimg.com/736x/57/81/49/578149670952517683.jpg';
+    }
     
     const { months, years } = getUserTenure();
     
-    // 5+ years - Blue (Highway Hero)
+    // 5+ years - Blue sports car (Highway Hero)
     if (years >= 5) {
-      return 'https://images.pexels.com/photos/1319854/pexels-photo-1319854.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop';
+      return 'https://i.pinimg.com/736x/57/81/49/578149670952511534.jpg';
     }
-    // 1+ years - Purple (Mini Racer)
+    // 1+ years - Purple race car (Mini Racer)
     else if (years >= 1) {
-      return 'https://images.pexels.com/photos/1545743/pexels-photo-1545743.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop';
+      return 'https://i.pinimg.com/736x/57/81/49/578149670952511535.jpg';
     }
-    // 5+ months - Yellow (Tiny Tires)
+    // 5+ months - Orange/yellow car (Tiny Tires)
     else if (months >= 5) {
-      return 'https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop';
+      return 'https://i.pinimg.com/736x/57/81/49/578149670952511475.jpg';
     }
-    // Default - Yellow for new users
+    // New users (0-5 months) - Cute yellow car (New Driver)
     else {
-      return 'https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop';
+      return 'https://i.pinimg.com/736x/57/81/49/578149670952517683.jpg';
     }
   };
 

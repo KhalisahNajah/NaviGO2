@@ -11,7 +11,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import { User, Camera, CreditCard as Edit3, Globe, DollarSign, MapPin, Settings, Navigation, Fuel, Route, Shield, X, Check, ChevronRight, Bell, Moon, Volume2, ChevronDown, LogOut, Award, Calendar } from 'lucide-react-native';
+import { User, Camera, CreditCard as Edit3, Globe, DollarSign, MapPin, Settings, Navigation, Fuel, Route, Shield, X, Check, ChevronRight, Bell, Moon, Volume2, ChevronDown, LogOut, Award, Calendar, Star } from 'lucide-react-native';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
@@ -147,19 +147,54 @@ export default function ProfileScreen() {
   };
 
   const changeProfilePicture = () => {
+    const avatarInfo = getAvatarInfo();
     Alert.alert(
-      'Avatar Information',
-      `Your current avatar represents your driving experience!\n\n${tenure.title}: ${tenure.years > 0 ? `${tenure.years} year${tenure.years > 1 ? 's' : ''}` : `${tenure.months} month${tenure.months > 1 ? 's' : ''}`} with naviGO\n\nKeep using the app to unlock new avatars!`,
-      [{ text: 'OK' }]
+      'Your naviGO Avatar',
+      `${avatarInfo.description}\n\n🏆 ${tenure.title}: ${tenure.years > 0 ? `${tenure.years} year${tenure.years > 1 ? 's' : ''}` : `${tenure.months} month${tenure.months > 1 ? 's' : ''}`} with naviGO\n\n${avatarInfo.nextLevel}`,
+      [{ text: 'Got it!' }]
     );
+  };
+
+  const getAvatarInfo = () => {
+    const { months, years } = tenure;
+    
+    if (years >= 5) {
+      return {
+        description: '🏎️ You\'ve unlocked the Highway Hero avatar! This sleek blue sports car represents your mastery of navigation.',
+        nextLevel: 'You\'ve reached the highest level! Keep navigating to maintain your legendary status.'
+      };
+    } else if (years >= 1) {
+      return {
+        description: '🏁 You\'ve unlocked the Mini Racer avatar! This purple race car shows your growing expertise.',
+        nextLevel: `Drive for ${5 - years} more year${5 - years > 1 ? 's' : ''} to unlock the legendary Highway Hero avatar!`
+      };
+    } else if (months >= 5) {
+      return {
+        description: '🚗 You\'ve unlocked the Tiny Tires avatar! This orange car represents your developing navigation skills.',
+        nextLevel: `Navigate for ${12 - months} more month${12 - months > 1 ? 's' : ''} to unlock the Mini Racer avatar!`
+      };
+    } else {
+      return {
+        description: '🚙 Welcome! You have the New Driver avatar - a friendly yellow car perfect for beginners.',
+        nextLevel: `Use naviGO for ${5 - months} more month${5 - months > 1 ? 's' : ''} to unlock the Tiny Tires avatar!`
+      };
+    }
   };
 
   const getAvatarBorderColor = () => {
     const { months, years } = tenure;
-    if (years >= 5) return '#2563EB'; // Blue
-    if (years >= 1) return '#8B5CF6'; // Purple
-    if (months >= 5) return '#F59E0B'; // Yellow
-    return colors.secondary; // Default
+    if (years >= 5) return '#2563EB'; // Blue for Highway Hero
+    if (years >= 1) return '#8B5CF6'; // Purple for Mini Racer
+    if (months >= 5) return '#F59E0B'; // Orange for Tiny Tires
+    return '#CBE54E'; // Yellow-green for New Driver
+  };
+
+  const getProgressPercentage = () => {
+    const { months, years } = tenure;
+    if (years >= 5) return 100; // Max level
+    if (years >= 1) return 75 + ((years - 1) / 4) * 25; // 75-100%
+    if (months >= 5) return 50 + ((months - 5) / 7) * 25; // 50-75%
+    return (months / 5) * 50; // 0-50%
   };
 
   const styles = createStyles(colors, theme);
@@ -188,16 +223,21 @@ export default function ProfileScreen() {
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <TouchableOpacity style={styles.profilePictureContainer} onPress={changeProfilePicture}>
-            <Image source={{ uri: avatarImage }} style={[styles.profilePicture, { borderColor: getAvatarBorderColor() }]} />
+            <Image 
+              source={{ uri: avatarImage }} 
+              style={[styles.profilePicture, { borderColor: getAvatarBorderColor() }]} 
+            />
             <View style={[styles.tenureBadge, { backgroundColor: getAvatarBorderColor() }]}>
               <Award size={12} color="white" />
             </View>
+            <View style={styles.avatarGlow} />
           </TouchableOpacity>
           <Text style={styles.profileName}>{userProfile.name}</Text>
           <Text style={styles.profileEmail}>{userProfile.email}</Text>
           <View style={styles.tenureInfo}>
             <Award size={16} color={getAvatarBorderColor()} />
             <Text style={[styles.tenureText, { color: getAvatarBorderColor() }]}>{tenure.title}</Text>
+            <Star size={14} color={getAvatarBorderColor()} fill={getAvatarBorderColor()} />
           </View>
           <View style={styles.locationInfo}>
             <MapPin size={16} color={colors.textSecondary} />
@@ -213,7 +253,7 @@ export default function ProfileScreen() {
 
         {/* Achievement Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Driving Experience</Text>
+          <Text style={styles.sectionTitle}>Driving Journey</Text>
           
           <View style={styles.achievementCard}>
             <View style={[styles.achievementIcon, { backgroundColor: getAvatarBorderColor() }]}>
@@ -223,8 +263,8 @@ export default function ProfileScreen() {
               <Text style={styles.achievementTitle}>{tenure.title}</Text>
               <Text style={styles.achievementDescription}>
                 {tenure.years > 0 
-                  ? `${tenure.years} year${tenure.years > 1 ? 's' : ''} of navigation experience`
-                  : `${tenure.months} month${tenure.months > 1 ? 's' : ''} of navigation experience`
+                  ? `${tenure.years} year${tenure.years > 1 ? 's' : ''} of smart navigation`
+                  : `${tenure.months} month${tenure.months > 1 ? 's' : ''} of smart navigation`
                 }
               </Text>
               <View style={styles.progressContainer}>
@@ -233,15 +273,76 @@ export default function ProfileScreen() {
                     style={[
                       styles.progressFill, 
                       { 
-                        width: `${Math.min((tenure.months / 60) * 100, 100)}%`,
+                        width: `${getProgressPercentage()}%`,
                         backgroundColor: getAvatarBorderColor()
                       }
                     ]} 
                   />
                 </View>
                 <Text style={styles.progressText}>
-                  {tenure.years >= 5 ? 'Max Level!' : `Next: ${tenure.years >= 1 ? 'Highway Hero (5 years)' : tenure.months >= 5 ? 'Mini Racer (1 year)' : 'Tiny Tires (5 months)'}`}
+                  {tenure.years >= 5 
+                    ? 'Max Level Achieved! 🏆' 
+                    : tenure.years >= 1 
+                    ? `Next: Highway Hero (${5 - tenure.years} year${5 - tenure.years > 1 ? 's' : ''} to go)`
+                    : tenure.months >= 5 
+                    ? `Next: Mini Racer (${12 - tenure.months} month${12 - tenure.months > 1 ? 's' : ''} to go)`
+                    : `Next: Tiny Tires (${5 - tenure.months} month${5 - tenure.months > 1 ? 's' : ''} to go)`
+                  }
                 </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Avatar Gallery */}
+          <View style={styles.avatarGallery}>
+            <Text style={styles.avatarGalleryTitle}>Avatar Collection</Text>
+            <View style={styles.avatarGrid}>
+              {/* New Driver */}
+              <View style={[styles.avatarGridItem, tenure.months >= 0 && styles.unlockedAvatar]}>
+                <Image 
+                  source={{ uri: 'https://i.pinimg.com/736x/57/81/49/578149670952517683.jpg' }} 
+                  style={[styles.avatarGridImage, tenure.months < 0 && styles.lockedAvatarImage]} 
+                />
+                <Text style={[styles.avatarGridLabel, tenure.months < 0 && styles.lockedAvatarLabel]}>
+                  New Driver
+                </Text>
+                {tenure.months >= 0 && <View style={styles.unlockedBadge}><Star size={10} color="#CBE54E" fill="#CBE54E" /></View>}
+              </View>
+
+              {/* Tiny Tires */}
+              <View style={[styles.avatarGridItem, tenure.months >= 5 && styles.unlockedAvatar]}>
+                <Image 
+                  source={{ uri: 'https://i.pinimg.com/736x/57/81/49/578149670952511475.jpg' }} 
+                  style={[styles.avatarGridImage, tenure.months < 5 && styles.lockedAvatarImage]} 
+                />
+                <Text style={[styles.avatarGridLabel, tenure.months < 5 && styles.lockedAvatarLabel]}>
+                  Tiny Tires
+                </Text>
+                {tenure.months >= 5 && <View style={styles.unlockedBadge}><Star size={10} color="#F59E0B" fill="#F59E0B" /></View>}
+              </View>
+
+              {/* Mini Racer */}
+              <View style={[styles.avatarGridItem, tenure.years >= 1 && styles.unlockedAvatar]}>
+                <Image 
+                  source={{ uri: 'https://i.pinimg.com/736x/57/81/49/578149670952511535.jpg' }} 
+                  style={[styles.avatarGridImage, tenure.years < 1 && styles.lockedAvatarImage]} 
+                />
+                <Text style={[styles.avatarGridLabel, tenure.years < 1 && styles.lockedAvatarLabel]}>
+                  Mini Racer
+                </Text>
+                {tenure.years >= 1 && <View style={styles.unlockedBadge}><Star size={10} color="#8B5CF6" fill="#8B5CF6" /></View>}
+              </View>
+
+              {/* Highway Hero */}
+              <View style={[styles.avatarGridItem, tenure.years >= 5 && styles.unlockedAvatar]}>
+                <Image 
+                  source={{ uri: 'https://i.pinimg.com/736x/57/81/49/578149670952511534.jpg' }} 
+                  style={[styles.avatarGridImage, tenure.years < 5 && styles.lockedAvatarImage]} 
+                />
+                <Text style={[styles.avatarGridLabel, tenure.years < 5 && styles.lockedAvatarLabel]}>
+                  Highway Hero
+                </Text>
+                {tenure.years >= 5 && <View style={styles.unlockedBadge}><Star size={10} color="#2563EB" fill="#2563EB" /></View>}
               </View>
             </View>
           </View>
@@ -625,15 +726,25 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     marginBottom: 16,
   },
   profilePicture: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     borderWidth: 4,
+  },
+  avatarGlow: {
+    position: 'absolute',
+    top: -10,
+    left: -10,
+    right: -10,
+    bottom: -10,
+    borderRadius: 70,
+    backgroundColor: 'rgba(203, 229, 78, 0.1)',
+    zIndex: -1,
   },
   tenureBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: 5,
+    right: 5,
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -652,7 +763,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-Regular',
     color: colors.textSecondary,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   tenureInfo: {
     flexDirection: 'row',
@@ -661,8 +772,8 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     marginBottom: 8,
   },
   tenureText: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
   },
   locationInfo: {
     flexDirection: 'row',
@@ -705,6 +816,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     gap: 16,
+    marginBottom: 20,
   },
   achievementIcon: {
     width: 48,
@@ -732,19 +844,84 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     gap: 4,
   },
   progressBar: {
-    height: 6,
+    height: 8,
     backgroundColor: colors.border,
-    borderRadius: 3,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
   },
   progressText: {
     fontSize: 12,
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter-Medium',
     color: colors.textSecondary,
+  },
+  avatarGallery: {
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  avatarGalleryTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: colors.text,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  avatarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  avatarGridItem: {
+    width: '48%',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    position: 'relative',
+  },
+  unlockedAvatar: {
+    borderColor: colors.primary,
+    backgroundColor: colors.background,
+  },
+  avatarGridImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 8,
+  },
+  lockedAvatarImage: {
+    opacity: 0.3,
+  },
+  avatarGridLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  lockedAvatarLabel: {
+    color: colors.textSecondary,
+  },
+  unlockedBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   settingItem: {
     flexDirection: 'row',

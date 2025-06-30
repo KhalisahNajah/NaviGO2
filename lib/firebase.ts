@@ -18,36 +18,17 @@ console.log(`🔥 Firebase: Initializing for ${Platform.OS}`);
 
 // Initialize Firebase app (prevent duplicate initialization)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+console.log('✅ Firebase app initialized');
 
-// Initialize Auth with simplified approach for SDK 53
-let auth;
-
-try {
-  // Use getAuth for all platforms in Expo managed workflow
-  auth = getAuth(app);
-  console.log(`✅ Firebase Auth initialized successfully for ${Platform.OS}`);
-} catch (error: any) {
-  console.error('❌ Firebase Auth initialization failed:', error.message);
-  
-  // Simple retry mechanism
-  try {
-    // Wait a moment and try again
-    setTimeout(() => {
-      auth = getAuth(app);
-      console.log(`✅ Firebase Auth retry successful for ${Platform.OS}`);
-    }, 100);
-  } catch (retryError: any) {
-    console.error('❌ Firebase Auth retry failed:', retryError.message);
-    throw new Error(`Failed to initialize Firebase Auth: ${retryError.message}`);
-  }
-}
-
-// Initialize other Firebase services
+// Initialize Firebase services immediately and synchronously
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
+// Initialize Auth - this must be synchronous and always return a valid auth instance
+export const auth = getAuth(app);
+
+console.log('✅ Firebase Auth initialized successfully');
 console.log('✅ Firebase services initialized successfully');
 
-// Export auth and app
-export { auth, app };
+export { app };
 export default app;

@@ -90,17 +90,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     console.log('AuthProvider: Setting up auth state listener...');
     
-    // Simplified auth state listener for SDK 53
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('AuthProvider: Auth state changed:', user ? `User: ${user.email}` : 'No user');
+    // Verify auth is available before setting up listener
+    if (!auth) {
+      console.error('AuthProvider: Firebase auth is not available');
+      setLoading(false);
+      return;
+    }
+
+    console.log('AuthProvider: Firebase auth is available, setting up listener');
+    
+    // Set up auth state listener
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('AuthProvider: Auth state changed:', firebaseUser ? `User: ${firebaseUser.email}` : 'No user');
       
       try {
-        setUser(user);
+        setUser(firebaseUser);
         
-        if (user) {
+        if (firebaseUser) {
           // Fetch user profile from Firestore
-          console.log('AuthProvider: Fetching user profile for:', user.uid);
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          console.log('AuthProvider: Fetching user profile for:', firebaseUser.uid);
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
             const profileData = userDoc.data();
             const profile = {
@@ -134,6 +143,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    if (!auth) {
+      throw new Error('Firebase auth is not available');
+    }
+    
     try {
       console.log('AuthProvider: Attempting to sign in user:', email);
       setLoading(true);
@@ -147,6 +160,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signUp = async (email: string, password: string, name: string) => {
+    if (!auth) {
+      throw new Error('Firebase auth is not available');
+    }
+    
     try {
       console.log('AuthProvider: Attempting to create user:', email);
       setLoading(true);
@@ -187,6 +204,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = async () => {
+    if (!auth) {
+      throw new Error('Firebase auth is not available');
+    }
+    
     try {
       console.log('AuthProvider: Signing out user');
       setLoading(true);
@@ -220,6 +241,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (email: string) => {
+    if (!auth) {
+      throw new Error('Firebase auth is not available');
+    }
+    
     try {
       await sendPasswordResetEmail(auth, email);
     } catch (error: any) {

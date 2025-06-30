@@ -1,6 +1,6 @@
 # naviGO - Smart Navigation App
 
-A comprehensive navigation app built with React Native and Expo, featuring smart route optimization, fuel cost calculation, traffic reporting, and community-driven updates.
+A comprehensive navigation app built with React Native and Expo SDK 53, featuring smart route optimization, fuel cost calculation, traffic reporting, and community-driven updates.
 
 ## 🚀 Features
 
@@ -35,8 +35,8 @@ A comprehensive navigation app built with React Native and Expo, featuring smart
 
 ## 🛠️ Tech Stack
 
-- **Framework**: React Native with Expo SDK 52
-- **Navigation**: Expo Router with tab-based architecture
+- **Framework**: React Native with Expo SDK 53
+- **Navigation**: Expo Router 5.0.2 with tab-based architecture
 - **Backend**: Firebase (Authentication, Firestore, Storage)
 - **Maps**: Google Maps integration with static maps for web
 - **Styling**: StyleSheet with custom theming system
@@ -175,6 +175,14 @@ eas submit --platform all
 - Platform-specific optimizations
 - Native performance for smooth animations
 
+## 🆕 What's New in SDK 53
+
+- **React 19**: Latest React features and performance improvements
+- **Enhanced Performance**: Better app startup times and memory usage
+- **Improved TypeScript**: Better type safety and developer experience
+- **New Architecture**: Support for React Native's new architecture
+- **Better Web Support**: Enhanced web compatibility and features
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -201,4 +209,4 @@ For support, email support@navigo-app.com or join our community Discord.
 
 ---
 
-Built with ❤️ using React Native and Expo
+Built with ❤️ using React Native and Expo SDK 53

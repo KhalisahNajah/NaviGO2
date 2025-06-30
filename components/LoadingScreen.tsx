@@ -14,14 +14,18 @@ export default function LoadingScreen({
   return (
     <View style={styles.container}>
       {showLogo && (
-        <Image
-          source={{ uri: 'https://i.pinimg.com/736x/2c/42/0b/2c420ba439ecfff12f1b214fe42783f5.jpg' }}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <View style={styles.logoContainer}>
+          <Image
+            source={{ uri: 'https://i.pinimg.com/736x/2c/42/0b/2c420ba439ecfff12f1b214fe42783f5.jpg' }}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.appName}>naviGO</Text>
+        </View>
       )}
       <ActivityIndicator size="large" color="#3B5284" style={styles.spinner} />
       <Text style={styles.message}>{message}</Text>
+      <Text style={styles.version}>Powered by Expo SDK 53</Text>
     </View>
   );
 }
@@ -34,10 +38,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 20,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   logo: {
     width: 120,
     height: 80,
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  appName: {
+    fontSize: 32,
+    fontFamily: 'Inter-Bold',
+    color: '#3B5284',
   },
   spinner: {
     marginVertical: 10,
@@ -47,5 +60,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#3B5284',
     textAlign: 'center',
+  },
+  version: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#5D6E1E',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });

@@ -38,7 +38,7 @@ console.log(`🔥 Firebase: Initializing for ${Platform.OS} with App ID: ${fireb
 // Initialize Firebase app (prevent duplicate initialization)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Auth with robust error handling
+// Initialize Auth with enhanced error handling for SDK 53
 let auth;
 
 try {
@@ -56,18 +56,29 @@ try {
 } catch (error: any) {
   console.log('⚠️ Firebase Auth initialization error, attempting fallback:', error.message);
   
-  // Only attempt getAuth fallback for specific errors
+  // Enhanced error handling for SDK 53
   if (
     error.code === 'auth/already-initialized' || 
     error.message?.includes('already initialized') ||
-    error.message?.includes('already exists')
+    error.message?.includes('already exists') ||
+    error.message?.includes('duplicate-app')
   ) {
     try {
       auth = getAuth(app);
       console.log(`✅ Firebase Auth fallback successful for ${Platform.OS}`);
     } catch (fallbackError: any) {
       console.error('❌ Firebase Auth fallback failed:', fallbackError.message);
-      throw new Error(`Failed to initialize Firebase Auth: ${fallbackError.message}`);
+      
+      // Final fallback - wait and retry
+      setTimeout(() => {
+        try {
+          auth = getAuth(app);
+          console.log(`✅ Firebase Auth delayed fallback successful for ${Platform.OS}`);
+        } catch (finalError: any) {
+          console.error('❌ All Firebase Auth initialization attempts failed:', finalError.message);
+          throw new Error(`Failed to initialize Firebase Auth: ${finalError.message}`);
+        }
+      }, 100);
     }
   } else {
     console.error('❌ Unexpected Firebase Auth error:', error.message);
@@ -77,7 +88,19 @@ try {
 
 // Ensure auth is properly initialized
 if (!auth) {
-  throw new Error('❌ Firebase Auth could not be initialized');
+  console.warn('⚠️ Firebase Auth not immediately available, will retry...');
+  // Create a promise that resolves when auth is available
+  auth = new Promise((resolve) => {
+    const checkAuth = () => {
+      try {
+        const authInstance = getAuth(app);
+        resolve(authInstance);
+      } catch (error) {
+        setTimeout(checkAuth, 50);
+      }
+    };
+    checkAuth();
+  });
 }
 
 // Initialize other Firebase services

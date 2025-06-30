@@ -41,7 +41,7 @@
     "experiments": {
       "typedRoutes": true
     },
-    "sdkVersion": "52.0.30",
+    "sdkVersion": "53.0.0",
     "extra": {
       "firebase": {
         "apiKey": "AIzaSyBvyaXoKe_ghnK0vVoYD34kmlliJFzUoEc",

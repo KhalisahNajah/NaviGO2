@@ -91,73 +91,83 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     console.log('AuthProvider: Setting up auth state listener...');
     
-    // Wait a bit to ensure Firebase Auth is fully initialized
-    const initTimeout = setTimeout(() => {
-      setAuthInitialized(true);
-    }, 100);
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('AuthProvider: Auth state changed:', user ? `User: ${user.email}` : 'No user');
-      
+    // Enhanced initialization for SDK 53
+    const initializeAuth = async () => {
       try {
-        setUser(user);
+        // Wait for auth to be available (handles promise case)
+        const authInstance = await Promise.resolve(auth);
         
-        if (user) {
-          // Fetch user profile from Firestore
-          console.log('AuthProvider: Fetching user profile for:', user.uid);
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            const profileData = userDoc.data();
-            const profile = {
-              ...profileData,
-              createdAt: profileData.createdAt?.toDate?.() || new Date(),
-              updatedAt: profileData.updatedAt?.toDate?.() || new Date(),
-            } as UserProfile;
-            console.log('AuthProvider: User profile loaded:', profile.name);
-            setUserProfile(profile);
-          } else {
-            console.log('AuthProvider: No user profile found in Firestore');
+        const unsubscribe = onAuthStateChanged(authInstance, async (user) => {
+          console.log('AuthProvider: Auth state changed:', user ? `User: ${user.email}` : 'No user');
+          
+          try {
+            setUser(user);
+            
+            if (user) {
+              // Fetch user profile from Firestore
+              console.log('AuthProvider: Fetching user profile for:', user.uid);
+              const userDoc = await getDoc(doc(db, 'users', user.uid));
+              if (userDoc.exists()) {
+                const profileData = userDoc.data();
+                const profile = {
+                  ...profileData,
+                  createdAt: profileData.createdAt?.toDate?.() || new Date(),
+                  updatedAt: profileData.updatedAt?.toDate?.() || new Date(),
+                } as UserProfile;
+                console.log('AuthProvider: User profile loaded:', profile.name);
+                setUserProfile(profile);
+              } else {
+                console.log('AuthProvider: No user profile found in Firestore');
+                setUserProfile(null);
+              }
+            } else {
+              console.log('AuthProvider: User signed out, clearing profile');
+              setUserProfile(null);
+            }
+          } catch (error) {
+            console.error('AuthProvider: Error in auth state change handler:', error);
             setUserProfile(null);
+          } finally {
+            setLoading(false);
+            setAuthInitialized(true);
           }
-        } else {
-          console.log('AuthProvider: User signed out, clearing profile');
-          setUserProfile(null);
-        }
-      } catch (error) {
-        console.error('AuthProvider: Error in auth state change handler:', error);
-        setUserProfile(null);
-      } finally {
-        // Only set loading to false after auth is initialized and we've processed the state
-        if (authInitialized) {
-          setLoading(false);
-        }
-      }
-    });
+        });
 
+        return unsubscribe;
+      } catch (error) {
+        console.error('AuthProvider: Error initializing auth listener:', error);
+        setLoading(false);
+        setAuthInitialized(true);
+      }
+    };
+
+    const cleanup = initializeAuth();
+    
     return () => {
       console.log('AuthProvider: Cleaning up auth state listener');
-      clearTimeout(initTimeout);
-      unsubscribe();
+      cleanup.then(unsubscribe => unsubscribe?.());
     };
-  }, [authInitialized]);
+  }, []);
 
-  // Set loading to false once auth is initialized, even if no state change occurs
+  // Fallback timeout for loading state
   useEffect(() => {
-    if (authInitialized) {
-      const fallbackTimeout = setTimeout(() => {
+    const fallbackTimeout = setTimeout(() => {
+      if (!authInitialized) {
         console.log('AuthProvider: Fallback timeout - setting loading to false');
         setLoading(false);
-      }, 2000);
+        setAuthInitialized(true);
+      }
+    }, 3000);
 
-      return () => clearTimeout(fallbackTimeout);
-    }
+    return () => clearTimeout(fallbackTimeout);
   }, [authInitialized]);
 
   const signIn = async (email: string, password: string) => {
     try {
       console.log('AuthProvider: Attempting to sign in user:', email);
       setLoading(true);
-      const result = await signInWithEmailAndPassword(auth, email, password);
+      const authInstance = await Promise.resolve(auth);
+      const result = await signInWithEmailAndPassword(authInstance, email, password);
       console.log('AuthProvider: Sign in successful:', result.user.email);
     } catch (error: any) {
       console.error('AuthProvider: Sign in error:', error);
@@ -170,7 +180,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('AuthProvider: Attempting to create user:', email);
       setLoading(true);
-      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      const authInstance = await Promise.resolve(auth);
+      const { user } = await createUserWithEmailAndPassword(authInstance, email, password);
       
       // Update the user's display name
       await updateProfile(user, { displayName: name });
@@ -210,7 +221,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('AuthProvider: Signing out user');
       setLoading(true);
-      await signOut(auth);
+      const authInstance = await Promise.resolve(auth);
+      await signOut(authInstance);
       console.log('AuthProvider: Sign out successful');
     } catch (error: any) {
       console.error('AuthProvider: Sign out error:', error);
@@ -241,7 +253,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const resetPassword = async (email: string) => {
     try {
-      await sendPasswordResetEmail(auth, email);
+      const authInstance = await Promise.resolve(auth);
+      await sendPasswordResetEmail(authInstance, email);
     } catch (error: any) {
       throw new Error(error.message);
     }

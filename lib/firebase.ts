@@ -22,30 +22,37 @@ const firebaseConfig = {
 // Initialize Firebase app (only once)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Auth with proper platform-specific logic
+// Initialize Auth with proper error handling
 let auth;
 
-if (Platform.OS === 'web') {
-  // For web, use getAuth
-  auth = getAuth(app);
-  console.log('Firebase Auth initialized for web');
-} else {
-  // For React Native, use initializeAuth with AsyncStorage persistence
-  try {
+try {
+  if (Platform.OS === 'web') {
+    // For web, use getAuth
+    auth = getAuth(app);
+    console.log('Firebase Auth initialized for web');
+  } else {
+    // For React Native, try initializeAuth first
     auth = initializeAuth(app, {
       persistence: getReactNativePersistence(AsyncStorage)
     });
     console.log('Firebase Auth initialized for React Native with AsyncStorage persistence');
-  } catch (error: any) {
-    // If auth is already initialized, get the existing instance
-    if (error.message?.includes('auth') || error.code === 'auth/already-initialized') {
-      auth = getAuth(app);
-      console.log('Firebase Auth already initialized, using existing instance');
-    } else {
-      console.error('Error initializing Firebase Auth:', error);
-      throw error;
-    }
   }
+} catch (error: any) {
+  console.log('Firebase Auth initialization error, attempting fallback:', error.message);
+  
+  // Fallback: try getAuth regardless of platform
+  try {
+    auth = getAuth(app);
+    console.log('Firebase Auth fallback successful');
+  } catch (fallbackError: any) {
+    console.error('Firebase Auth fallback also failed:', fallbackError);
+    throw new Error(`Failed to initialize Firebase Auth: ${fallbackError.message}`);
+  }
+}
+
+// Ensure auth is defined before proceeding
+if (!auth) {
+  throw new Error('Firebase Auth could not be initialized');
 }
 
 // Initialize Firestore
@@ -57,10 +64,13 @@ export const storage = getStorage(app);
 // Export auth and app
 export { auth, app };
 
-// ✅ FIXED: Move auth state listener to next event loop tick
-// This ensures auth is fully registered before we try to use it
-setTimeout(() => {
-  if (auth) {
+// Set up auth state listener safely
+let authListenerSetup = false;
+
+const setupAuthListener = () => {
+  if (authListenerSetup || !auth) return;
+  
+  try {
     auth.onAuthStateChanged((user) => {
       if (user) {
         console.log('Firebase Auth: User is signed in:', user.email);
@@ -68,7 +78,14 @@ setTimeout(() => {
         console.log('Firebase Auth: User is signed out');
       }
     });
+    authListenerSetup = true;
+    console.log('Firebase Auth state listener set up successfully');
+  } catch (error) {
+    console.error('Error setting up auth state listener:', error);
   }
-}, 0);
+};
+
+// Set up the listener on next tick to ensure auth is fully ready
+setTimeout(setupAuthListener, 100);
 
 export default app;

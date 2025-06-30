@@ -71,7 +71,7 @@ export default function SignIn() {
           {/* Header */}
           <View style={styles.header}>
             <Image
-              source={{ uri: 'https://images.pexels.com/photos/1319854/pexels-photo-1319854.jpeg?auto=compress&cs=tinysrgb&w=120&h=80&fit=crop' }}
+              source={{ uri: 'https://i.pinimg.com/736x/2c/42/0b/2c420ba439ecfff12f1b214fe42783f5.jpg' }}
               style={styles.logo}
               resizeMode="contain"
             />

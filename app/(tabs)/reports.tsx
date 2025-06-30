@@ -817,6 +817,10 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   reportsList: {
     flex: 1,
     padding: 20,
+     paddingHorizontal: 20,
+    // Remove paddingTop here so the content can start higher
+    // Or, if you want some top padding but less than 20, adjust this value
+  paddingTop: 10, // Example: reduces top padding
   },
   reportCard: {
     backgroundColor: colors.surface,

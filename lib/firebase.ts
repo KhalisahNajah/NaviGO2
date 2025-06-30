@@ -40,13 +40,19 @@ try {
 } catch (error: any) {
   console.log('Firebase Auth initialization error, attempting fallback:', error.message);
   
-  // Fallback: try getAuth regardless of platform
-  try {
-    auth = getAuth(app);
-    console.log('Firebase Auth fallback successful');
-  } catch (fallbackError: any) {
-    console.error('Firebase Auth fallback also failed:', fallbackError);
-    throw new Error(`Failed to initialize Firebase Auth: ${fallbackError.message}`);
+  // Only attempt fallback if the error indicates auth is already initialized
+  if (error.code === 'auth/already-initialized' || error.message?.includes('already initialized')) {
+    try {
+      auth = getAuth(app);
+      console.log('Firebase Auth fallback successful - using existing instance');
+    } catch (fallbackError: any) {
+      console.error('Firebase Auth fallback also failed:', fallbackError);
+      throw new Error(`Failed to initialize Firebase Auth: ${fallbackError.message}`);
+    }
+  } else {
+    // For other errors, don't attempt fallback
+    console.error('Firebase Auth initialization failed with unexpected error:', error);
+    throw new Error(`Failed to initialize Firebase Auth: ${error.message}`);
   }
 }
 
@@ -63,29 +69,5 @@ export const storage = getStorage(app);
 
 // Export auth and app
 export { auth, app };
-
-// Set up auth state listener safely
-let authListenerSetup = false;
-
-const setupAuthListener = () => {
-  if (authListenerSetup || !auth) return;
-  
-  try {
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        console.log('Firebase Auth: User is signed in:', user.email);
-      } else {
-        console.log('Firebase Auth: User is signed out');
-      }
-    });
-    authListenerSetup = true;
-    console.log('Firebase Auth state listener set up successfully');
-  } catch (error) {
-    console.error('Error setting up auth state listener:', error);
-  }
-};
-
-// Set up the listener on next tick to ensure auth is fully ready
-setTimeout(setupAuthListener, 100);
 
 export default app;

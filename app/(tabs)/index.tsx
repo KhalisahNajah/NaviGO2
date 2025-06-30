@@ -157,7 +157,7 @@ export default function Navigate() {
         />
       </View>
 
-      {/* Header Overlay - Made more compact */}
+      {/* Header Overlay - Made much smaller */}
       <View style={styles.headerOverlay}>
         <View style={styles.header}>
           <View style={styles.logoContainer}>
@@ -450,24 +450,24 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-start', // Changed from space-between to flex-start
+    justifyContent: 'center', // Center the logo
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 15, // Reduced from 20
+    paddingTop: 50, // Reduced from 60
+    paddingBottom: 10, // Reduced from 20
   },
   logoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 8, // Added padding around the logo for better visual balance
+    padding: 4, // Reduced padding
   },
   logo: {
-    width: 50, // Reduced from 60
-    height: 35, // Reduced from 40
+    width: 40, // Much smaller logo
+    height: 30, // Much smaller logo
   },
   searchOverlay: {
     position: 'absolute',
-    top: 125, // Adjusted to account for smaller header
+    top: 100, // Adjusted for smaller header
     left: 20,
     right: 20,
     zIndex: 1000,

@@ -325,7 +325,7 @@ export default function ProfileScreen() {
               {/* New Driver */}
               <View style={[styles.avatarGridItem, tenure.months >= 0 && styles.unlockedAvatar]}>
                 <Image 
-                  source={{ uri: 'https://i.pinimg.com/736x/57/81/49/578149670952517683.jpg' }} 
+                  source={{ uri: 'https://i.pinimg.com/736x/48/d6/d5/48d6d52393dae5dca0340c5cfd382477.jpg' }} 
                   style={[styles.avatarGridImage, tenure.months < 0 && styles.lockedAvatarImage]} 
                 />
                 <Text style={[styles.avatarGridLabel, tenure.months < 0 && styles.lockedAvatarLabel]}>
@@ -337,7 +337,7 @@ export default function ProfileScreen() {
               {/* Tiny Tires */}
               <View style={[styles.avatarGridItem, tenure.months >= 5 && styles.unlockedAvatar]}>
                 <Image 
-                  source={{ uri: 'https://i.pinimg.com/736x/57/81/49/578149670952511475.jpg' }} 
+                  source={{ uri: 'https://i.pinimg.com/736x/a4/f5/7c/a4f57c74f3ce84f7277e2d7051a918f8.jpg' }} 
                   style={[styles.avatarGridImage, tenure.months < 5 && styles.lockedAvatarImage]} 
                 />
                 <Text style={[styles.avatarGridLabel, tenure.months < 5 && styles.lockedAvatarLabel]}>
@@ -349,7 +349,7 @@ export default function ProfileScreen() {
               {/* Mini Racer */}
               <View style={[styles.avatarGridItem, tenure.years >= 1 && styles.unlockedAvatar]}>
                 <Image 
-                  source={{ uri: 'https://i.pinimg.com/736x/57/81/49/578149670952511535.jpg' }} 
+                  source={{ uri: 'https://i.pinimg.com/736x/f9/ba/9b/f9ba9be42dde39d8915d92f553177a0a.jpg' }} 
                   style={[styles.avatarGridImage, tenure.years < 1 && styles.lockedAvatarImage]} 
                 />
                 <Text style={[styles.avatarGridLabel, tenure.years < 1 && styles.lockedAvatarLabel]}>
@@ -361,7 +361,7 @@ export default function ProfileScreen() {
               {/* Highway Hero */}
               <View style={[styles.avatarGridItem, tenure.years >= 5 && styles.unlockedAvatar]}>
                 <Image 
-                  source={{ uri: 'https://i.pinimg.com/736x/57/81/49/578149670952511534.jpg' }} 
+                  source={{ uri: 'https://i.pinimg.com/736x/79/bf/06/79bf068a19a32366822007ea60bb9e29.jpg' }} 
                   style={[styles.avatarGridImage, tenure.years < 5 && styles.lockedAvatarImage]} 
                 />
                 <Text style={[styles.avatarGridLabel, tenure.years < 5 && styles.lockedAvatarLabel]}>

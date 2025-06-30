@@ -209,12 +209,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Update the user's display name
       await updateProfile(user, { displayName: name });
       
-      // Create user profile in Firestore with new driver avatar
+      // Create user profile in Firestore with new driver avatar - CORRECTED LINK
       const newUserProfile: UserProfile = {
         uid: user.uid,
         name,
         email: user.email || '',
-        profilePicture: 'https://i.pinimg.com/736x/57/81/49/578149670952517683.jpg', // New Driver avatar
+        profilePicture: 'https://i.pinimg.com/736x/48/d6/d5/48d6d52393dae5dca0340c5cfd382477.jpg', // New Driver avatar - CORRECT LINK
         currency: 'USD',
         region: 'North America',
         country: 'United States',
@@ -377,27 +377,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const getAvatarImage = () => {
     if (!userProfile) {
-      // Default for new users - cute yellow car
-      return 'https://i.pinimg.com/736x/57/81/49/578149670952517683.jpg';
+      // Default for new users - CORRECTED LINK
+      return 'https://i.pinimg.com/736x/48/d6/d5/48d6d52393dae5dca0340c5cfd382477.jpg';
     }
     
     const { months, years } = getUserTenure();
     
-    // 5+ years - Blue sports car (Highway Hero)
+    // 5+ years - Highway Hero - CORRECTED LINK
     if (years >= 5) {
-      return 'https://i.pinimg.com/736x/57/81/49/578149670952511534.jpg';
+      return 'https://i.pinimg.com/736x/79/bf/06/79bf068a19a32366822007ea60bb9e29.jpg';
     }
-    // 1+ years - Purple race car (Mini Racer)
+    // 1+ years - Mini Racer - CORRECTED LINK
     else if (years >= 1) {
-      return 'https://i.pinimg.com/736x/57/81/49/578149670952511535.jpg';
+      return 'https://i.pinimg.com/736x/f9/ba/9b/f9ba9be42dde39d8915d92f553177a0a.jpg';
     }
-    // 5+ months - Orange/yellow car (Tiny Tires)
+    // 5+ months - Tiny Tires - CORRECTED LINK
     else if (months >= 5) {
-      return 'https://i.pinimg.com/736x/57/81/49/578149670952511475.jpg';
+      return 'https://i.pinimg.com/736x/a4/f5/7c/a4f57c74f3ce84f7277e2d7051a918f8.jpg';
     }
-    // New users (0-5 months) - Cute yellow car (New Driver)
+    // New users (0-5 months) - New Driver - CORRECTED LINK
     else {
-      return 'https://i.pinimg.com/736x/57/81/49/578149670952517683.jpg';
+      return 'https://i.pinimg.com/736x/48/d6/d5/48d6d52393dae5dca0340c5cfd382477.jpg';
     }
   };
 

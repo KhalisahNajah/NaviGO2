@@ -88,44 +88,62 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('Setting up auth state listener...');
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user ? `User: ${user.email}` : 'No user');
       setUser(user);
       
       if (user) {
         // Fetch user profile from Firestore
         try {
+          console.log('Fetching user profile for:', user.uid);
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const profileData = userDoc.data();
-            setUserProfile({
+            const profile = {
               ...profileData,
               createdAt: profileData.createdAt?.toDate?.() || new Date(),
               updatedAt: profileData.updatedAt?.toDate?.() || new Date(),
-            } as UserProfile);
+            } as UserProfile;
+            console.log('User profile loaded:', profile.name);
+            setUserProfile(profile);
+          } else {
+            console.log('No user profile found in Firestore');
+            setUserProfile(null);
           }
         } catch (error) {
           console.error('Error fetching user profile:', error);
+          setUserProfile(null);
         }
       } else {
+        console.log('User signed out, clearing profile');
         setUserProfile(null);
       }
       
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      console.log('Cleaning up auth state listener');
+      unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      console.log('Attempting to sign in user:', email);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      console.log('Sign in successful:', result.user.email);
     } catch (error: any) {
+      console.error('Sign in error:', error);
       throw new Error(error.message);
     }
   };
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
+      console.log('Attempting to create user:', email);
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       
       // Update the user's display name
@@ -146,21 +164,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         updatedAt: new Date(),
       };
       
+      console.log('Creating user profile in Firestore');
       await setDoc(doc(db, 'users', user.uid), {
         ...newUserProfile,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
+      
+      console.log('User created successfully:', user.email);
       setUserProfile(newUserProfile);
     } catch (error: any) {
+      console.error('Sign up error:', error);
       throw new Error(error.message);
     }
   };
 
   const logout = async () => {
     try {
+      console.log('Signing out user');
       await signOut(auth);
+      console.log('Sign out successful');
     } catch (error: any) {
+      console.error('Sign out error:', error);
       throw new Error(error.message);
     }
   };

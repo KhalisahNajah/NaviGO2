@@ -18,12 +18,14 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth with platform-specific persistence
+// Initialize Auth with proper persistence
 let auth;
 try {
   if (Platform.OS === 'web') {
+    // Web uses default persistence (localStorage)
     auth = getAuth(app);
   } else {
+    // React Native uses AsyncStorage for persistence
     auth = initializeAuth(app, {
       persistence: getReactNativePersistence(AsyncStorage)
     });

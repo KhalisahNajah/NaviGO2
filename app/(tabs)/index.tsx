@@ -21,7 +21,6 @@ import {
   Route,
   Search,
   Target,
-  Settings,
   X,
   Play,
 } from 'lucide-react-native';
@@ -167,6 +166,8 @@ export default function Navigate() {
               style={styles.logo}
               resizeMode="contain"
             />
+          </View>
+        </View>
       </View>
 
       {/* Search Overlay */}
@@ -469,9 +470,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: colors.primary,
   },
-  settingsButton: {
-    padding: 8,
-  },
+
   searchOverlay: {
     position: 'absolute',
     top: 140,

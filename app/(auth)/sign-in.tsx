@@ -11,11 +11,15 @@ import {
   Platform,
   ScrollView,
   Image,
+  Dimensions,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import { Mail, Lock, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, LogIn, UserPlus, ArrowRight } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+
+const { width, height } = Dimensions.get('window');
 
 export default function SignIn() {
   const { theme, colors } = useContext(ThemeContext);
@@ -79,149 +83,160 @@ export default function SignIn() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <LinearGradient
+        colors={['#3B5284', '#5BA8A0', '#CBE54E']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
       >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView 
+          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Image
-              source={{ uri: 'https://i.pinimg.com/736x/2c/42/0b/2c420ba439ecfff12f1b214fe42783f5.jpg' }}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.title}>naviGO</Text>
-            <Text style={styles.subtitle}>Welcome back! Sign in to continue your journey.</Text>
-          </View>
-
-          {/* Sign In Form */}
-          <View style={styles.form}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Email Address</Text>
-              <View style={styles.inputContainer}>
-                <Mail size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={styles.textInput}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Enter your email"
-                  placeholderTextColor={colors.textSecondary}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading && !resetLoading}
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {/* Header with Logo */}
+            <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <Image
+                  source={{ uri: 'https://i.pinimg.com/736x/2c/42/0b/2c420ba439ecfff12f1b214fe42783f5.jpg' }}
+                  style={styles.logo}
+                  resizeMode="contain"
                 />
               </View>
+              <Text style={styles.appTitle}>naviGO</Text>
+              <Text style={styles.subtitle}>Smart navigation for every journey</Text>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Password</Text>
-              <View style={styles.inputContainer}>
-                <Lock size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={styles.textInput}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Enter your password"
-                  placeholderTextColor={colors.textSecondary}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading && !resetLoading}
-                />
+            {/* Sign In Form Card */}
+            <View style={styles.formCard}>
+              <View style={styles.formHeader}>
+                <Text style={styles.formTitle}>Welcome Back</Text>
+                <Text style={styles.formSubtitle}>Sign in to continue your journey</Text>
+              </View>
+
+              <View style={styles.form}>
+                {/* Email Input */}
+                <View style={styles.inputGroup}>
+                  <View style={styles.inputContainer}>
+                    <View style={styles.inputIconContainer}>
+                      <Mail size={20} color={colors.primary} />
+                    </View>
+                    <TextInput
+                      style={styles.textInput}
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholder="Email address"
+                      placeholderTextColor="rgba(59, 82, 132, 0.5)"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      editable={!loading && !resetLoading}
+                    />
+                  </View>
+                </View>
+
+                {/* Password Input */}
+                <View style={styles.inputGroup}>
+                  <View style={styles.inputContainer}>
+                    <View style={styles.inputIconContainer}>
+                      <Lock size={20} color={colors.primary} />
+                    </View>
+                    <TextInput
+                      style={styles.textInput}
+                      value={password}
+                      onChangeText={setPassword}
+                      placeholder="Password"
+                      placeholderTextColor="rgba(59, 82, 132, 0.5)"
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      editable={!loading && !resetLoading}
+                    />
+                    <TouchableOpacity 
+                      onPress={() => setShowPassword(!showPassword)}
+                      disabled={loading || resetLoading}
+                      style={styles.eyeButton}
+                    >
+                      {showPassword ? (
+                        <EyeOff size={20} color="rgba(59, 82, 132, 0.7)" />
+                      ) : (
+                        <Eye size={20} color="rgba(59, 82, 132, 0.7)" />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Forgot Password */}
                 <TouchableOpacity 
-                  onPress={() => setShowPassword(!showPassword)}
+                  onPress={handleForgotPassword}
+                  disabled={loading || resetLoading}
+                  style={styles.forgotPasswordContainer}
+                >
+                  <Text style={[
+                    styles.forgotPassword,
+                    (loading || resetLoading) && styles.disabledText
+                  ]}>
+                    {resetLoading ? 'Sending reset email...' : 'Forgot password?'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Sign In Button */}
+                <TouchableOpacity 
+                  style={[
+                    styles.signInButton, 
+                    (loading || resetLoading) && styles.buttonDisabled
+                  ]}
+                  onPress={handleSignIn}
                   disabled={loading || resetLoading}
                 >
-                  {showPassword ? (
-                    <EyeOff size={20} color={colors.textSecondary} />
-                  ) : (
-                    <Eye size={20} color={colors.textSecondary} />
-                  )}
+                  <LinearGradient
+                    colors={['#3B5284', '#5BA8A0']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.buttonGradient}
+                  >
+                    <Text style={styles.signInButtonText}>
+                      {loading ? 'Signing In...' : 'Log In'}
+                    </Text>
+                    <ArrowRight size={20} color="white" />
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
-            </View>
 
-            <TouchableOpacity 
-              onPress={handleForgotPassword}
-              disabled={loading || resetLoading}
-              style={styles.forgotPasswordContainer}
-            >
-              <Text style={[
-                styles.forgotPassword,
-                (loading || resetLoading) && styles.disabledText
-              ]}>
-                {resetLoading ? 'Sending reset email...' : 'Forgot Password?'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[
-                styles.signInButton, 
-                (loading || resetLoading) && styles.buttonDisabled
-              ]}
-              onPress={handleSignIn}
-              disabled={loading || resetLoading}
-            >
-              <LogIn size={20} color="white" />
-              <Text style={styles.signInButtonText}>
-                {loading ? 'Signing In...' : 'Sign In'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Sign Up Link */}
-          <View style={styles.signUpSection}>
-            <Text style={styles.signUpText}>Don't have an account?</Text>
-            <Link href="/(auth)/sign-up" asChild>
-              <TouchableOpacity 
-                style={[
-                  styles.signUpButton,
-                  (loading || resetLoading) && styles.buttonDisabled
-                ]}
-                disabled={loading || resetLoading}
-              >
-                <UserPlus size={20} color={colors.primary} />
-                <Text style={styles.signUpButtonText}>Create Account</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
-
-          {/* Features Preview */}
-          <View style={styles.featuresSection}>
-            <Text style={styles.featuresTitle}>Why choose naviGO?</Text>
-            <View style={styles.featuresList}>
-              <View style={styles.featureItem}>
-                <View style={styles.featureBullet} />
-                <Text style={styles.featureText}>Smart route optimization with fuel cost calculation</Text>
+              {/* Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>OR</Text>
+                <View style={styles.dividerLine} />
               </View>
-              <View style={styles.featureItem}>
-                <View style={styles.featureBullet} />
-                <Text style={styles.featureText}>Real-time traffic updates from community</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <View style={styles.featureBullet} />
-                <Text style={styles.featureText}>Find fuel stations and EV charging points</Text>
-              </View>
-              <View style={styles.featureItem}>
-                <View style={styles.featureBullet} />
-                <Text style={styles.featureText}>Report and share traffic conditions</Text>
+
+              {/* Sign Up Link */}
+              <View style={styles.signUpSection}>
+                <Text style={styles.signUpText}>Don't have an account?</Text>
+                <Link href="/(auth)/sign-up" asChild>
+                  <TouchableOpacity 
+                    style={[
+                      styles.signUpButton,
+                      (loading || resetLoading) && styles.buttonDisabled
+                    ]}
+                    disabled={loading || resetLoading}
+                  >
+                    <Text style={styles.signUpButtonText}>Register here</Text>
+                    <ArrowRight size={16} color={colors.primary} />
+                  </TouchableOpacity>
+                </Link>
               </View>
             </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+
+            {/* Bottom Spacing */}
+            <View style={styles.bottomSpacing} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -229,7 +244,9 @@ export default function SignIn() {
 const createStyles = (colors: any, theme: string) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+  },
+  gradient: {
+    flex: 1,
   },
   keyboardView: {
     flex: 1,
@@ -237,58 +254,113 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingVertical: 40,
+    justifyContent: 'center',
+    minHeight: height,
   },
   header: {
     alignItems: 'center',
     marginBottom: 40,
+    paddingTop: 60,
+  },
+  logoContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   logo: {
-    width: 120,
+    width: 80,
     height: 80,
-    marginBottom: 16,
   },
-  title: {
-    fontSize: 32,
+  appTitle: {
+    fontSize: 42,
     fontFamily: 'Inter-Bold',
-    color: colors.primary,
+    color: 'white',
     marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
-    lineHeight: 22,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  formCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 24,
+    padding: 32,
+    marginHorizontal: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 16,
+    backdropFilter: 'blur(10px)',
+  },
+  formHeader: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  formTitle: {
+    fontSize: 28,
+    fontFamily: 'Inter-Bold',
+    color: colors.primary,
+    marginBottom: 8,
+  },
+  formSubtitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: 'rgba(59, 82, 132, 0.7)',
+    textAlign: 'center',
   },
   form: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   inputGroup: {
     marginBottom: 20,
   },
-  inputLabel: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-    color: colors.text,
-    marginBottom: 8,
-  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(59, 82, 132, 0.05)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(59, 82, 132, 0.1)',
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  inputIconContainer: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(59, 82, 132, 0.1)',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 12,
+    marginRight: 12,
   },
   textInput: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Inter-Regular',
-    color: colors.text,
+    fontFamily: 'Inter-Medium',
+    color: colors.primary,
+    paddingVertical: 16,
+  },
+  eyeButton: {
+    padding: 12,
+    marginRight: 4,
   },
   forgotPasswordContainer: {
     alignSelf: 'flex-end',
@@ -296,65 +368,71 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   forgotPassword: {
     fontSize: 14,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter-SemiBold',
     color: colors.primary,
   },
   disabledText: {
-    color: colors.textSecondary,
+    color: 'rgba(59, 82, 132, 0.5)',
     opacity: 0.6,
   },
   signInButton: {
-    backgroundColor: colors.primary,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  buttonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
+    paddingVertical: 18,
+    gap: 12,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   signInButtonText: {
     color: 'white',
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
+    marginVertical: 24,
     gap: 16,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: 'rgba(59, 82, 132, 0.2)',
   },
   dividerText: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: colors.textSecondary,
+    fontFamily: 'Inter-SemiBold',
+    color: 'rgba(59, 82, 132, 0.6)',
   },
   signUpSection: {
     alignItems: 'center',
-    marginBottom: 40,
   },
   signUpText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: colors.textSecondary,
+    color: 'rgba(59, 82, 132, 0.7)',
     marginBottom: 12,
   },
   signUpButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    paddingHorizontal: 20,
+    backgroundColor: 'rgba(59, 82, 132, 0.1)',
+    paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.primary,
+    borderWidth: 2,
+    borderColor: 'rgba(59, 82, 132, 0.2)',
     gap: 8,
   },
   signUpButtonText: {
@@ -362,40 +440,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
   },
-  featuresSection: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  featuresTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
-    color: colors.text,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  featuresList: {
-    gap: 12,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  featureBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.primary,
-    marginTop: 6,
-  },
-  featureText: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: colors.textSecondary,
-    lineHeight: 20,
+  bottomSpacing: {
+    height: 40,
   },
 });

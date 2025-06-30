@@ -1,9 +1,8 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBvyaXoKe_ghnK0vVoYD34kmlliJFzUoEc",
@@ -20,69 +19,27 @@ console.log(`🔥 Firebase: Initializing for ${Platform.OS}`);
 // Initialize Firebase app (prevent duplicate initialization)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Auth with enhanced error handling for SDK 53
+// Initialize Auth with simplified approach for SDK 53
 let auth;
 
 try {
-  if (Platform.OS === 'web') {
-    // Web platform - use standard getAuth
-    auth = getAuth(app);
-    console.log('✅ Firebase Auth initialized for web');
-  } else {
-    // React Native platforms - use initializeAuth with AsyncStorage
-    auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage)
-    });
-    console.log(`✅ Firebase Auth initialized for ${Platform.OS} with AsyncStorage persistence`);
-  }
+  // Use getAuth for all platforms in Expo managed workflow
+  auth = getAuth(app);
+  console.log(`✅ Firebase Auth initialized successfully for ${Platform.OS}`);
 } catch (error: any) {
-  console.log('⚠️ Firebase Auth initialization error, attempting fallback:', error.message);
+  console.error('❌ Firebase Auth initialization failed:', error.message);
   
-  // Enhanced error handling for SDK 53
-  if (
-    error.code === 'auth/already-initialized' || 
-    error.message?.includes('already initialized') ||
-    error.message?.includes('already exists') ||
-    error.message?.includes('duplicate-app')
-  ) {
-    try {
+  // Simple retry mechanism
+  try {
+    // Wait a moment and try again
+    setTimeout(() => {
       auth = getAuth(app);
-      console.log(`✅ Firebase Auth fallback successful for ${Platform.OS}`);
-    } catch (fallbackError: any) {
-      console.error('❌ Firebase Auth fallback failed:', fallbackError.message);
-      
-      // Final fallback - wait and retry
-      setTimeout(() => {
-        try {
-          auth = getAuth(app);
-          console.log(`✅ Firebase Auth delayed fallback successful for ${Platform.OS}`);
-        } catch (finalError: any) {
-          console.error('❌ All Firebase Auth initialization attempts failed:', finalError.message);
-          throw new Error(`Failed to initialize Firebase Auth: ${finalError.message}`);
-        }
-      }, 100);
-    }
-  } else {
-    console.error('❌ Unexpected Firebase Auth error:', error.message);
-    throw new Error(`Failed to initialize Firebase Auth: ${error.message}`);
+      console.log(`✅ Firebase Auth retry successful for ${Platform.OS}`);
+    }, 100);
+  } catch (retryError: any) {
+    console.error('❌ Firebase Auth retry failed:', retryError.message);
+    throw new Error(`Failed to initialize Firebase Auth: ${retryError.message}`);
   }
-}
-
-// Ensure auth is properly initialized
-if (!auth) {
-  console.warn('⚠️ Firebase Auth not immediately available, will retry...');
-  // Create a promise that resolves when auth is available
-  auth = new Promise((resolve) => {
-    const checkAuth = () => {
-      try {
-        const authInstance = getAuth(app);
-        resolve(authInstance);
-      } catch (error) {
-        setTimeout(checkAuth, 50);
-      }
-    };
-    checkAuth();
-  });
 }
 
 // Initialize other Firebase services

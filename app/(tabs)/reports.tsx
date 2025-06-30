@@ -367,7 +367,7 @@ export default function ReportsScreen() {
         </View>
       </View>
 
-      {/* Filter Chips - Fixed sizing */}
+      {/* Filter Chips - Made smaller */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -386,7 +386,7 @@ export default function ReportsScreen() {
           style={[styles.filterChip, filterType === 'police' && styles.activeFilterChip]}
           onPress={() => setFilterType('police')}
         >
-          <Shield size={14} color={filterType === 'police' ? 'white' : colors.textSecondary} />
+          <Shield size={12} color={filterType === 'police' ? 'white' : colors.textSecondary} />
           <Text style={[styles.filterChipText, filterType === 'police' && styles.activeFilterChipText]}>
             Police
           </Text>
@@ -395,7 +395,7 @@ export default function ReportsScreen() {
           style={[styles.filterChip, filterType === 'traffic' && styles.activeFilterChip]}
           onPress={() => setFilterType('traffic')}
         >
-          <Car size={14} color={filterType === 'traffic' ? 'white' : colors.textSecondary} />
+          <Car size={12} color={filterType === 'traffic' ? 'white' : colors.textSecondary} />
           <Text style={[styles.filterChipText, filterType === 'traffic' && styles.activeFilterChipText]}>
             Traffic Jam
           </Text>
@@ -404,7 +404,7 @@ export default function ReportsScreen() {
           style={[styles.filterChip, filterType === 'accident' && styles.activeFilterChip]}
           onPress={() => setFilterType('accident')}
         >
-          <AlertTriangle size={14} color={filterType === 'accident' ? 'white' : colors.textSecondary} />
+          <AlertTriangle size={12} color={filterType === 'accident' ? 'white' : colors.textSecondary} />
           <Text style={[styles.filterChipText, filterType === 'accident' && styles.activeFilterChipText]}>
             Accident
           </Text>
@@ -413,7 +413,7 @@ export default function ReportsScreen() {
           style={[styles.filterChip, filterType === 'construction' && styles.activeFilterChip]}
           onPress={() => setFilterType('construction')}
         >
-          <Construction size={14} color={filterType === 'construction' ? 'white' : colors.textSecondary} />
+          <Construction size={12} color={filterType === 'construction' ? 'white' : colors.textSecondary} />
           <Text style={[styles.filterChipText, filterType === 'construction' && styles.activeFilterChipText]}>
             Construction
           </Text>
@@ -781,33 +781,33 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   filterContainer: {
     backgroundColor: colors.surface,
-    borderBottomWidth: 0,
+    borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   filterContent: {
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    gap: 8,
+    paddingVertical: 6, // Reduced from 8
+    gap: 6, // Reduced from 8
   },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    height: 40,
-    borderRadius: 20,
+    paddingHorizontal: 10, // Reduced from 12
+    paddingVertical: 6, // Reduced from 8
+    height: 32, // Reduced from 40
+    borderRadius: 16, // Reduced from 20
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: 6,
-    minWidth: 60,
+    gap: 4, // Reduced from 6
+    minWidth: 50, // Reduced from 60
   },
   activeFilterChip: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
   filterChipText: {
-    fontSize: 12,
+    fontSize: 11, // Reduced from 12
     fontFamily: 'Inter-Medium', // Ensure this font is loaded
     color: colors.textSecondary,
   },
@@ -815,11 +815,9 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     color: 'white',
   },
   reportsList: {
-    flex: 0.5,
-    paddingTop: 10, // You might want to adjust this further (e.g., to 0 or 5)
-                    // depending on how much gap you want between filters and first report.
+    flex: 1,
+    paddingTop: 5, // Reduced from 10 to bring cards closer to filters
     paddingHorizontal: 20,
-   
   },
   reportCard: {
     backgroundColor: colors.surface,

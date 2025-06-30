@@ -24,6 +24,7 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) {
@@ -34,7 +35,7 @@ export default function SignIn() {
     setLoading(true);
     try {
       await signIn(email.trim(), password);
-      router.replace('/(tabs)');
+      // Navigation will be handled by the auth state change in index.tsx
     } catch (error: any) {
       Alert.alert('Sign In Failed', error.message);
     } finally {
@@ -44,15 +45,33 @@ export default function SignIn() {
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
-      Alert.alert('Error', 'Please enter your email address first');
+      Alert.alert('Email Required', 'Please enter your email address first to reset your password.');
       return;
     }
 
+    setResetLoading(true);
     try {
       await resetPassword(email.trim());
-      Alert.alert('Success', 'Password reset email sent! Check your inbox.');
+      Alert.alert(
+        'Password Reset Email Sent',
+        `We have sent a password reset link to ${email.trim()}. Please check your email inbox and follow the instructions to reset your password.`,
+        [{ text: 'OK' }]
+      );
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      let errorMessage = 'Failed to send password reset email. Please try again.';
+      
+      // Handle specific Firebase error codes
+      if (error.message.includes('user-not-found')) {
+        errorMessage = 'No account found with this email address. Please check your email or create a new account.';
+      } else if (error.message.includes('invalid-email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.message.includes('too-many-requests')) {
+        errorMessage = 'Too many password reset attempts. Please try again later.';
+      }
+      
+      Alert.alert('Password Reset Failed', errorMessage);
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -94,6 +113,7 @@ export default function SignIn() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  editable={!loading && !resetLoading}
                 />
               </View>
             </View>
@@ -111,8 +131,12 @@ export default function SignIn() {
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  editable={!loading && !resetLoading}
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <TouchableOpacity 
+                  onPress={() => setShowPassword(!showPassword)}
+                  disabled={loading || resetLoading}
+                >
                   {showPassword ? (
                     <EyeOff size={20} color={colors.textSecondary} />
                   ) : (
@@ -122,14 +146,26 @@ export default function SignIn() {
               </View>
             </View>
 
-            <TouchableOpacity onPress={handleForgotPassword}>
-              <Text style={styles.forgotPassword}>Forgot Password?</Text>
+            <TouchableOpacity 
+              onPress={handleForgotPassword}
+              disabled={loading || resetLoading}
+              style={styles.forgotPasswordContainer}
+            >
+              <Text style={[
+                styles.forgotPassword,
+                (loading || resetLoading) && styles.disabledText
+              ]}>
+                {resetLoading ? 'Sending reset email...' : 'Forgot Password?'}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={[styles.signInButton, loading && styles.buttonDisabled]}
+              style={[
+                styles.signInButton, 
+                (loading || resetLoading) && styles.buttonDisabled
+              ]}
               onPress={handleSignIn}
-              disabled={loading}
+              disabled={loading || resetLoading}
             >
               <LogIn size={20} color="white" />
               <Text style={styles.signInButtonText}>
@@ -149,7 +185,13 @@ export default function SignIn() {
           <View style={styles.signUpSection}>
             <Text style={styles.signUpText}>Don't have an account?</Text>
             <Link href="/(auth)/sign-up" asChild>
-              <TouchableOpacity style={styles.signUpButton}>
+              <TouchableOpacity 
+                style={[
+                  styles.signUpButton,
+                  (loading || resetLoading) && styles.buttonDisabled
+                ]}
+                disabled={loading || resetLoading}
+              >
                 <UserPlus size={20} color={colors.primary} />
                 <Text style={styles.signUpButtonText}>Create Account</Text>
               </TouchableOpacity>
@@ -248,12 +290,18 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: colors.text,
   },
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end',
+    marginBottom: 24,
+  },
   forgotPassword: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: colors.primary,
-    textAlign: 'right',
-    marginBottom: 24,
+  },
+  disabledText: {
+    color: colors.textSecondary,
+    opacity: 0.6,
   },
   signInButton: {
     backgroundColor: colors.primary,

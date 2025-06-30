@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { router } from 'expo-router';
 
 interface UserProfile {
   uid: string;
@@ -249,12 +250,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('👋 AuthProvider: Signing out user');
       setLoading(true);
+      
+      // Clear user state immediately to prevent UI flicker
+      setUser(null);
+      setUserProfile(null);
+      
+      // Sign out from Firebase
       await signOut(auth);
       console.log('✅ AuthProvider: Sign out successful');
+      
+      // Force navigation to sign-in page
+      console.log('🔄 AuthProvider: Redirecting to sign-in page');
+      router.replace('/(auth)/sign-in');
+      
     } catch (error: any) {
       console.error('❌ AuthProvider: Sign out error:', error);
-      setLoading(false);
+      // Even if sign out fails, clear local state and redirect
+      setUser(null);
+      setUserProfile(null);
+      router.replace('/(auth)/sign-in');
       throw new Error(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -292,11 +309,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     try {
       console.log('📧 Sending password reset email to:', email);
-      await sendPasswordResetEmail(auth, email);
-      console.log('✅ Password reset email sent');
+      await sendPasswordResetEmail(auth, email, {
+        url: 'https://navigo-app.netlify.app/(auth)/sign-in', // Deep link back to your app
+        handleCodeInApp: false, // Handle reset in email, not in app
+      });
+      console.log('✅ Password reset email sent successfully');
     } catch (error: any) {
       console.error('❌ Password reset error:', error);
-      throw new Error(error.message);
+      
+      // Provide more user-friendly error messages
+      let userFriendlyMessage = error.message;
+      
+      if (error.code === 'auth/user-not-found') {
+        userFriendlyMessage = 'No account found with this email address.';
+      } else if (error.code === 'auth/invalid-email') {
+        userFriendlyMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/too-many-requests') {
+        userFriendlyMessage = 'Too many password reset attempts. Please try again later.';
+      } else if (error.code === 'auth/network-request-failed') {
+        userFriendlyMessage = 'Network error. Please check your internet connection and try again.';
+      }
+      
+      throw new Error(userFriendlyMessage);
     }
   };
 

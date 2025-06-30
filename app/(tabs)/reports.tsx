@@ -786,7 +786,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   filterContent: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 8,
     gap: 8,
   },
   filterChip: {

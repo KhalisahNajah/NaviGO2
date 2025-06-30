@@ -41,21 +41,6 @@
     "experiments": {
       "typedRoutes": true
     },
-    "sdkVersion": "53.0.0",
-    "extra": {
-      "firebase": {
-        "apiKey": "AIzaSyBvyaXoKe_ghnK0vVoYD34kmlliJFzUoEc",
-        "authDomain": "maptogo-9518d.firebaseapp.com",
-        "projectId": "maptogo-9518d",
-        "storageBucket": "maptogo-9518d.firebasestorage.app",
-        "messagingSenderId": "201263013926",
-        "appId": {
-          "web": "1:201263013926:web:3939d2ea055a249532c6e7",
-          "ios": "1:201263013926:ios:9ed8e30e13ba113a32c6e7",
-          "android": "1:201263013926:android:80d070b384ed0fe732c6e7"
-        },
-        "measurementId": "G-0089LCZZ8G"
-      }
-    }
+    "sdkVersion": "53.0.0"
   }
 }

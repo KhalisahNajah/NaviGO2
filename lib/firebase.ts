@@ -1,39 +1,9 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBvyaXoKe_ghnK0vVoYD34kmlliJFzUoEc",
-  authDomain: "maptogo-9518d.firebaseapp.com",
-  projectId: "maptogo-9518d",
-  storageBucket: "maptogo-9518d.appspot.com",  // <-- fix ".app" to ".com"
-  messagingSenderId: "201263013926",
-  appId: "1:201263013926:web:3939d2ea055a249532c6e7",
-  measurementId: "G-0089LCZZ8G"
-};
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
-export { app, auth, db, storage };
-export default app;
-
-
-// Get platform-specific app ID
-const getAppId = () => {
-  const firebaseConfig = Constants.expoConfig?.extra?.firebase;
-  
-  if (Platform.OS === 'ios') {
-    return firebaseConfig?.appId?.ios || "1:201263013926:ios:9ed8e30e13ba113a32c6e7";
-  } else if (Platform.OS === 'android') {
-    return firebaseConfig?.appId?.android || "1:201263013926:android:80d070b384ed0fe732c6e7";
-  } else {
-    return firebaseConfig?.appId?.web || "1:201263013926:web:3939d2ea055a249532c6e7";
-  }
-};
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBvyaXoKe_ghnK0vVoYD34kmlliJFzUoEc",
@@ -41,11 +11,11 @@ const firebaseConfig = {
   projectId: "maptogo-9518d",
   storageBucket: "maptogo-9518d.firebasestorage.app",
   messagingSenderId: "201263013926",
-  appId: getAppId(),
+  appId: "1:201263013926:web:3939d2ea055a249532c6e7",
   measurementId: "G-0089LCZZ8G"
 };
 
-console.log(`🔥 Firebase: Initializing for ${Platform.OS} with App ID: ${firebaseConfig.appId}`);
+console.log(`🔥 Firebase: Initializing for ${Platform.OS}`);
 
 // Initialize Firebase app (prevent duplicate initialization)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();

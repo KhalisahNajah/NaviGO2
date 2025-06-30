@@ -248,27 +248,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     try {
-      console.log('👋 AuthProvider: Signing out user');
-      setLoading(true);
+      console.log('👋 AuthProvider: Starting logout process');
       
       // Clear user state immediately to prevent UI flicker
+      console.log('🧹 AuthProvider: Clearing user state');
       setUser(null);
       setUserProfile(null);
+      setLoading(true);
       
       // Sign out from Firebase
+      console.log('🔐 AuthProvider: Signing out from Firebase');
       await signOut(auth);
-      console.log('✅ AuthProvider: Sign out successful');
+      console.log('✅ AuthProvider: Firebase sign out successful');
+      
+      // Small delay to ensure state is cleared
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Force navigation to sign-in page
       console.log('🔄 AuthProvider: Redirecting to sign-in page');
       router.replace('/(auth)/sign-in');
       
+      console.log('✅ AuthProvider: Logout process completed successfully');
+      
     } catch (error: any) {
       console.error('❌ AuthProvider: Sign out error:', error);
-      // Even if sign out fails, clear local state and redirect
+      
+      // Even if Firebase sign out fails, clear local state and redirect
+      console.log('🔄 AuthProvider: Forcing logout despite error');
       setUser(null);
       setUserProfile(null);
-      router.replace('/(auth)/sign-in');
+      
+      // Force redirect regardless of error
+      setTimeout(() => {
+        router.replace('/(auth)/sign-in');
+      }, 100);
+      
       throw new Error(error.message);
     } finally {
       setLoading(false);

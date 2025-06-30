@@ -23,8 +23,7 @@ try {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   console.log('✅ Firebase app initialized successfully');
 } catch (error) {
-  console.error('  has not been registered yet]
- ERROR  ❌Firebase app initialization failed:', error);
+  console.error('❌ Firebase app initialization failed:', error);
   throw new Error(`Firebase app initialization failed: ${error}`);
 }
 

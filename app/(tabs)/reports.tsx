@@ -713,7 +713,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderRadius: 20,
     backgroundColor: colors.background,
     borderWidth: 1,

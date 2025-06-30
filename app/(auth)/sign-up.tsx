@@ -103,7 +103,6 @@ export default function SignUp() {
                   resizeMode="contain"
                 />
               </View>
-              <Text style={styles.appTitle}>naviGO</Text>
               <Text style={styles.subtitle}>Join the smart navigation revolution</Text>
             </View>
 

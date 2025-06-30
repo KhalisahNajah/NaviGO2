@@ -112,7 +112,6 @@ export default function SignIn() {
                   resizeMode="contain"
                 />
               </View>
-              <Text style={styles.appTitle}>naviGO</Text>
               <Text style={styles.subtitle}>Smart navigation for every journey</Text>
             </View>
 

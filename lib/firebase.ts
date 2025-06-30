@@ -38,7 +38,7 @@ if (Platform.OS === 'web') {
     console.log('Firebase Auth initialized for React Native with AsyncStorage persistence');
   } catch (error: any) {
     // If auth is already initialized, get the existing instance
-    if (error.code === 'auth/already-initialized') {
+    if (error.message?.includes('auth') || error.code === 'auth/already-initialized') {
       auth = getAuth(app);
       console.log('Firebase Auth already initialized, using existing instance');
     } else {
@@ -57,13 +57,18 @@ export const storage = getStorage(app);
 // Export auth and app
 export { auth, app };
 
-// Add connection state logging
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    console.log('Firebase Auth: User is signed in:', user.email);
-  } else {
-    console.log('Firebase Auth: User is signed out');
+// ✅ FIXED: Move auth state listener to next event loop tick
+// This ensures auth is fully registered before we try to use it
+setTimeout(() => {
+  if (auth) {
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        console.log('Firebase Auth: User is signed in:', user.email);
+      } else {
+        console.log('Firebase Auth: User is signed out');
+      }
+    });
   }
-});
+}, 0);
 
 export default app;

@@ -702,6 +702,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   filterContainer: {
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
+    height: 40,
     borderBottomColor: colors.border,
   },
   filterContent: {

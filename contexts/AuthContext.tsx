@@ -90,77 +90,104 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     console.log('AuthProvider: Setting up auth state listener...');
     
-    // Verify auth is available before setting up listener
+    // Enhanced auth verification
     if (!auth) {
-      console.error('AuthProvider: Firebase auth is not available');
+      console.error('❌ AuthProvider: Firebase auth is not available');
+      console.error('Auth object:', auth);
+      console.error('Auth type:', typeof auth);
       setLoading(false);
       return;
     }
 
-    console.log('AuthProvider: Firebase auth is available, setting up listener');
+    console.log('✅ AuthProvider: Firebase auth is available');
+    console.log('Auth instance:', auth.constructor?.name || 'unknown');
+    console.log('Auth app:', auth.app?.name || 'undefined');
     
-    // Set up auth state listener with error handling
-    const unsubscribe = onAuthStateChanged(
-      auth, 
-      async (firebaseUser) => {
-        console.log('AuthProvider: Auth state changed:', firebaseUser ? `User: ${firebaseUser.email}` : 'No user');
-        
-        try {
-          setUser(firebaseUser);
+    // Set up auth state listener with enhanced error handling
+    let unsubscribe: (() => void) | null = null;
+    
+    try {
+      console.log('🔧 Setting up onAuthStateChanged listener...');
+      
+      unsubscribe = onAuthStateChanged(
+        auth, 
+        async (firebaseUser) => {
+          console.log('🔄 AuthProvider: Auth state changed:', firebaseUser ? `User: ${firebaseUser.email}` : 'No user');
           
-          if (firebaseUser) {
-            // Fetch user profile from Firestore
-            console.log('AuthProvider: Fetching user profile for:', firebaseUser.uid);
-            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-            if (userDoc.exists()) {
-              const profileData = userDoc.data();
-              const profile = {
-                ...profileData,
-                createdAt: profileData.createdAt?.toDate?.() || new Date(),
-                updatedAt: profileData.updatedAt?.toDate?.() || new Date(),
-              } as UserProfile;
-              console.log('AuthProvider: User profile loaded:', profile.name);
-              setUserProfile(profile);
+          try {
+            setUser(firebaseUser);
+            
+            if (firebaseUser) {
+              // Fetch user profile from Firestore
+              console.log('📥 AuthProvider: Fetching user profile for:', firebaseUser.uid);
+              const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+              if (userDoc.exists()) {
+                const profileData = userDoc.data();
+                const profile = {
+                  ...profileData,
+                  createdAt: profileData.createdAt?.toDate?.() || new Date(),
+                  updatedAt: profileData.updatedAt?.toDate?.() || new Date(),
+                } as UserProfile;
+                console.log('✅ AuthProvider: User profile loaded:', profile.name);
+                setUserProfile(profile);
+              } else {
+                console.log('⚠️ AuthProvider: No user profile found in Firestore');
+                setUserProfile(null);
+              }
             } else {
-              console.log('AuthProvider: No user profile found in Firestore');
+              console.log('👋 AuthProvider: User signed out, clearing profile');
               setUserProfile(null);
             }
-          } else {
-            console.log('AuthProvider: User signed out, clearing profile');
+          } catch (error) {
+            console.error('❌ AuthProvider: Error in auth state change handler:', error);
             setUserProfile(null);
+          } finally {
+            setLoading(false);
           }
-        } catch (error) {
-          console.error('AuthProvider: Error in auth state change handler:', error);
-          setUserProfile(null);
-        } finally {
+        },
+        (error) => {
+          console.error('❌ AuthProvider: Auth state listener error:', error);
+          console.error('Error code:', error.code);
+          console.error('Error message:', error.message);
           setLoading(false);
         }
-      },
-      (error) => {
-        console.error('AuthProvider: Auth state listener error:', error);
-        setLoading(false);
-      }
-    );
+      );
+      
+      console.log('✅ Auth state listener set up successfully');
+      
+    } catch (error) {
+      console.error('❌ AuthProvider: Failed to set up auth state listener:', error);
+      setLoading(false);
+    }
 
     // Cleanup function
     return () => {
-      console.log('AuthProvider: Cleaning up auth state listener');
-      unsubscribe();
+      console.log('🧹 AuthProvider: Cleaning up auth state listener');
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+          console.log('✅ Auth state listener cleaned up');
+        } catch (error) {
+          console.error('❌ Error cleaning up auth listener:', error);
+        }
+      }
     };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     if (!auth) {
-      throw new Error('Firebase auth is not available');
+      const error = 'Firebase auth is not available';
+      console.error('❌ SignIn:', error);
+      throw new Error(error);
     }
     
     try {
-      console.log('AuthProvider: Attempting to sign in user:', email);
+      console.log('🔐 AuthProvider: Attempting to sign in user:', email);
       setLoading(true);
       const result = await signInWithEmailAndPassword(auth, email, password);
-      console.log('AuthProvider: Sign in successful:', result.user.email);
+      console.log('✅ AuthProvider: Sign in successful:', result.user.email);
     } catch (error: any) {
-      console.error('AuthProvider: Sign in error:', error);
+      console.error('❌ AuthProvider: Sign in error:', error);
       setLoading(false);
       throw new Error(error.message);
     }
@@ -168,11 +195,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signUp = async (email: string, password: string, name: string) => {
     if (!auth) {
-      throw new Error('Firebase auth is not available');
+      const error = 'Firebase auth is not available';
+      console.error('❌ SignUp:', error);
+      throw new Error(error);
     }
     
     try {
-      console.log('AuthProvider: Attempting to create user:', email);
+      console.log('👤 AuthProvider: Attempting to create user:', email);
       setLoading(true);
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       
@@ -194,17 +223,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         updatedAt: new Date(),
       };
       
-      console.log('AuthProvider: Creating user profile in Firestore');
+      console.log('💾 AuthProvider: Creating user profile in Firestore');
       await setDoc(doc(db, 'users', user.uid), {
         ...newUserProfile,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
       
-      console.log('AuthProvider: User created successfully:', user.email);
+      console.log('✅ AuthProvider: User created successfully:', user.email);
       setUserProfile(newUserProfile);
     } catch (error: any) {
-      console.error('AuthProvider: Sign up error:', error);
+      console.error('❌ AuthProvider: Sign up error:', error);
       setLoading(false);
       throw new Error(error.message);
     }
@@ -212,23 +241,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     if (!auth) {
-      throw new Error('Firebase auth is not available');
+      const error = 'Firebase auth is not available';
+      console.error('❌ Logout:', error);
+      throw new Error(error);
     }
     
     try {
-      console.log('AuthProvider: Signing out user');
+      console.log('👋 AuthProvider: Signing out user');
       setLoading(true);
       await signOut(auth);
-      console.log('AuthProvider: Sign out successful');
+      console.log('✅ AuthProvider: Sign out successful');
     } catch (error: any) {
-      console.error('AuthProvider: Sign out error:', error);
+      console.error('❌ AuthProvider: Sign out error:', error);
       setLoading(false);
       throw new Error(error.message);
     }
   };
 
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
-    if (!user || !userProfile) return;
+    if (!user || !userProfile) {
+      console.warn('⚠️ Cannot update profile: no user or userProfile');
+      return;
+    }
     
     try {
       const updatedProfile = {
@@ -242,19 +276,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         updatedAt: new Date(),
       });
       setUserProfile(updatedProfile);
+      console.log('✅ User profile updated successfully');
     } catch (error: any) {
+      console.error('❌ Error updating user profile:', error);
       throw new Error(error.message);
     }
   };
 
   const resetPassword = async (email: string) => {
     if (!auth) {
-      throw new Error('Firebase auth is not available');
+      const error = 'Firebase auth is not available';
+      console.error('❌ Reset Password:', error);
+      throw new Error(error);
     }
     
     try {
+      console.log('📧 Sending password reset email to:', email);
       await sendPasswordResetEmail(auth, email);
+      console.log('✅ Password reset email sent');
     } catch (error: any) {
+      console.error('❌ Password reset error:', error);
       throw new Error(error.message);
     }
   };

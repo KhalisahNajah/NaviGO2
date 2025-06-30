@@ -2,10 +2,9 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
   getAuth, 
   initializeAuth, 
-  getReactNativePersistence,
-  connectAuthEmulator 
+  getReactNativePersistence
 } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { Platform } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,29 +22,29 @@ const firebaseConfig = {
 // Initialize Firebase app (only once)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Auth with proper error handling and persistence
+// Initialize Auth with proper platform-specific logic
 let auth;
-try {
-  if (Platform.OS === 'web') {
-    // Web uses default persistence (localStorage)
-    auth = getAuth(app);
-    console.log('Firebase Auth initialized for web');
-  } else {
-    // React Native uses AsyncStorage for persistence
+
+if (Platform.OS === 'web') {
+  // For web, use getAuth
+  auth = getAuth(app);
+  console.log('Firebase Auth initialized for web');
+} else {
+  // For React Native, use initializeAuth with AsyncStorage persistence
+  try {
     auth = initializeAuth(app, {
       persistence: getReactNativePersistence(AsyncStorage)
     });
     console.log('Firebase Auth initialized for React Native with AsyncStorage persistence');
-  }
-} catch (error: any) {
-  // If auth is already initialized, get the existing instance
-  if (error.code === 'auth/already-initialized') {
-    auth = getAuth(app);
-    console.log('Firebase Auth already initialized, using existing instance');
-  } else {
-    console.error('Error initializing Firebase Auth:', error);
-    // Fallback to basic auth
-    auth = getAuth(app);
+  } catch (error: any) {
+    // If auth is already initialized, get the existing instance
+    if (error.code === 'auth/already-initialized') {
+      auth = getAuth(app);
+      console.log('Firebase Auth already initialized, using existing instance');
+    } else {
+      console.error('Error initializing Firebase Auth:', error);
+      throw error;
+    }
   }
 }
 

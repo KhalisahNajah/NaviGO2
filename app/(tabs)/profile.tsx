@@ -126,19 +126,44 @@ export default function ProfileScreen() {
   const handleLogout = () => {
     Alert.alert(
       'Sign Out',
-      'Are you sure you want to sign out?',
+      'Are you sure you want to sign out? You will need to log in again to access the app.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Cancel', 
+          style: 'cancel' 
+        },
         {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('Profile: Starting logout process...');
+              
+              // Show loading state
+              Alert.alert('Signing Out', 'Please wait...', [], { cancelable: false });
+              
+              // Perform logout
               await logout();
-              // Navigate to sign-in page after successful logout
-              router.replace('/(auth)/sign-in');
+              
+              console.log('Profile: Logout completed, should redirect to sign-in');
+              
             } catch (error: any) {
-              Alert.alert('Error', error.message);
+              console.error('Profile: Logout error:', error);
+              
+              // Even if there's an error, try to force navigation
+              Alert.alert(
+                'Logout Error', 
+                'There was an issue signing out, but you will be redirected to the login page.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      // Force navigation as fallback
+                      router.replace('/(auth)/sign-in');
+                    }
+                  }
+                ]
+              );
             }
           },
         },
@@ -160,7 +185,7 @@ export default function ProfileScreen() {
     
     if (years >= 5) {
       return {
-        description: '🏎️ You\'ve unlocked the Highway Hero avatar! This sleek green sports car represents your mastery of navigation.',
+        description: '🏎️ You\'ve unlocked the Highway Hero avatar! This sleek blue sports car represents your mastery of navigation.',
         nextLevel: 'You\'ve reached the highest level! Keep navigating to maintain your legendary status.'
       };
     } else if (years >= 1) {
@@ -170,12 +195,12 @@ export default function ProfileScreen() {
       };
     } else if (months >= 5) {
       return {
-        description: '🚗 You\'ve unlocked the Tiny Tires avatar! This yellow car represents your developing navigation skills.',
+        description: '🚗 You\'ve unlocked the Tiny Tires avatar! This orange car represents your developing navigation skills.',
         nextLevel: `Navigate for ${12 - months} more month${12 - months > 1 ? 's' : ''} to unlock the Mini Racer avatar!`
       };
     } else {
       return {
-        description: '🚙 Welcome! You have the New Driver avatar - a friendly blue car perfect for beginners.',
+        description: '🚙 Welcome! You have the New Driver avatar - a friendly yellow car perfect for beginners.',
         nextLevel: `Use naviGO for ${5 - months} more month${5 - months > 1 ? 's' : ''} to unlock the Tiny Tires avatar!`
       };
     }

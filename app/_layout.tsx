@@ -28,18 +28,22 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
+      console.log('Fonts loaded, hiding splash screen');
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) {
+    console.log('Waiting for fonts to load...');
     return null;
   }
 
+  console.log('RootLayout: Rendering app with providers');
+
   return (
-    <AuthProvider>
-      <UserProvider>
-        <ThemeProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <UserProvider>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="(auth)" />
@@ -47,8 +51,8 @@ export default function RootLayout() {
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />
-        </ThemeProvider>
-      </UserProvider>
-    </AuthProvider>
+        </UserProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -757,7 +757,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   searchSection: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 10,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,

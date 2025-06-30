@@ -681,7 +681,7 @@ const createStyles = (colors: any, theme: string) => StyleSheet.create({
   },
   routesOverlayHeader: {
     paddingHorizontal: 20,
-    marginBottom: 10,
+    marginBottom: 16,
     position: 'relative',
   },
   routesOverlayTitle: {

@@ -12,10 +12,7 @@
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",
     "@expo/vector-icons": "^14.0.0",
-    "@lucide/lab": "^0.1.2",
     "@react-native-async-storage/async-storage": "1.23.1",
-    "@react-navigation/bottom-tabs": "^6.5.11",
-    "@react-navigation/native": "^6.1.9",
     "babel-plugin-module-resolver": "^5.0.2",
     "expo": "~52.0.30",
     "expo-blur": "~13.0.2",
@@ -51,16 +48,5 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~18.2.79",
     "typescript": "~5.3.3"
-  },
-  "keywords": [
-    "navigation",
-    "maps",
-    "react-native",
-    "expo",
-    "traffic",
-    "fuel",
-    "mobile-app"
-  ],
-  "author": "Your Name",
-  "description": "Smart navigation app with fuel cost calculation and traffic reporting"
+  }
 }
